@@ -7,98 +7,96 @@
 
 INCLUDE Irvine32.inc
 
-MAX_PRODUCTS = 10
-MAX_NAME_LEN = 25
-MAX_CODE_LEN = 8
-FILE_BUFFER_SIZE = 4096
-MAX_STOCK = 100
+MAX_PRODUCTOS = 10
+LONGITUD_MAX_NOMBRE = 25
+LONGITUD_MAX_CODIGO = 8
+TAMANO_BUFFER_ARCHIVO = 4096
+EXISTENCIA_MAXIMA = 100
 
-Product STRUCT
-    Code        BYTE MAX_CODE_LEN DUP(0)
-    ProdName    BYTE (MAX_NAME_LEN + 1) DUP(0)
-    PriceCents  DWORD ?
-    Quantity    DWORD ?
-Product ENDS
+Producto STRUCT
+    Codigo        BYTE LONGITUD_MAX_CODIGO DUP(0)
+    Nombre    BYTE (LONGITUD_MAX_NOMBRE + 1) DUP(0)
+    PrecioCentavos  DWORD ?
+    Existencia    DWORD ?
+Producto ENDS
 
 .data
-    inventoryFile   BYTE "data\inventario_papeleria.dat", 0
-    fallbackFile    BYTE "inventario_papeleria.dat", 0
-    productArray    Product MAX_PRODUCTS DUP(<>)
-    productCount    DWORD 0
-    tempCode        BYTE 16 DUP(0)
-    tempName        BYTE 40 DUP(0)
-    tempEntry       BYTE 40 DUP(0)
-    menuChoice      BYTE 16 DUP(0)
-    inputBuffer     BYTE 64 DUP(0)
-    fileBuffer      BYTE FILE_BUFFER_SIZE DUP(0)
-    stagingArray    Product MAX_PRODUCTS DUP(<>)
-    numberBuffer    BYTE 12 DUP(0)
-    reverseDigits   BYTE 20 DUP(0)
-    lineBreak       BYTE 13, 10
-    separator       BYTE '|'
-    fileHandle      DWORD ?
-    ioError         DWORD 0
-    unsavedChanges  DWORD 0
-    saveSucceeded   DWORD 0
-    loadSucceeded   DWORD 0
-    usingFallback   DWORD 0
-    fileBytes       DWORD 0
-    stageCount      DWORD 0
-    totalRevenue    QWORD 0
+    rutaInventario   BYTE "data\inventario_papeleria.dat", 0
+    rutaRespaldo    BYTE "inventario_papeleria.dat", 0
+    arregloProductos    Producto MAX_PRODUCTOS DUP(<>)
+    cantidadProductos    DWORD 0
+    codigoTemporal        BYTE 16 DUP(0)
+    nombreTemporal        BYTE 40 DUP(0)
+    entradaTemporal       BYTE 40 DUP(0)
+    opcionMenu      BYTE 16 DUP(0)
+    bufferEntrada     BYTE 64 DUP(0)
+    bufferArchivo      BYTE TAMANO_BUFFER_ARCHIVO DUP(0)
+    arregloTemporal    Producto MAX_PRODUCTOS DUP(<>)
+    bufferNumero    BYTE 12 DUP(0)
+    digitosInvertidos   BYTE 20 DUP(0)
+    saltoLinea       BYTE 13, 10
+    separador       BYTE '|'
+    identificadorArchivo      DWORD ?
+    errorEntradaSalida         DWORD 0
+    cambiosSinGuardar  DWORD 0
+    guardadoExitoso   DWORD 0
+    cargaExitosa   DWORD 0
+    usaRespaldo   DWORD 0
+    bytesArchivo       DWORD 0
+    cantidadTemporal      DWORD 0
+    ingresosTotales    QWORD 0
 
-    msgTitle        BYTE "=== PAPELERIA DEL VALLE ===", 13, 10, 0
-    msgMenu1        BYTE "1) Registrar producto", 13, 10, 0
-    msgMenu2        BYTE "2) Mostrar inventario", 13, 10, 0
-    msgMenu3        BYTE "3) Buscar por codigo", 13, 10, 0
-    msgMenu4        BYTE "4) Recibir mercancia", 13, 10, 0
-    msgMenu5        BYTE "5) Vender producto", 13, 10, 0
-    msgMenu6        BYTE "6) Mostrar resumen", 13, 10, 0
-    msgMenu7        BYTE "7) Guardar catalogo", 13, 10, 0
-    msgMenu8        BYTE "8) Cargar catalogo", 13, 10, 0
-    msgMenu9        BYTE "9) Regla de negocio", 13, 10, 0
-    msgMenu0        BYTE "0) Salir", 13, 10, 0
-    promptMenu      BYTE "Seleccione una opcion: ", 0
-    promptCode      BYTE "Codigo (ABC-123): ", 0
-    promptName      BYTE "Nombre del producto: ", 0
-    promptPrice     BYTE "Precio en MXN (ej. 185.50): ", 0
-    promptQty       BYTE "Cantidad: ", 0
-    msgInvalid      BYTE "Entrada invalida. Intente otra vez.", 13, 10, 0
-    msgCreated      BYTE "Producto registrado correctamente.", 13, 10, 0
-    msgStockReceived BYTE "Mercancia recibida correctamente.", 13, 10, 0
-    msgDuplicate    BYTE "Codigo duplicado.", 13, 10, 0
-    msgNotFound     BYTE "Producto no encontrado.", 13, 10, 0
-    msgSaved        BYTE "Catalogo guardado correctamente.", 13, 10, 0
-    msgLoaded       BYTE "Catalogo cargado correctamente.", 13, 10, 0
-    msgSummary      BYTE "Resumen general:", 13, 10, 0
-    msgRule         BYTE "Regla del negocio: descuento del 10% en compras de 5 o mas unidades.", 13, 10, 0
-    msgExit         BYTE "Gracias por usar la papeleria.", 13, 10, 0
-    msgDemo         BYTE "Catalogo inicial cargado.", 13, 10, 0
-    msgNoProducts   BYTE "No hay productos registrados.", 13, 10, 0
-    msgFull         BYTE "El inventario ya tiene 10 productos.", 13, 10, 0
-    msgInvalidCode  BYTE "Codigo invalido. Use el formato ABC-123.", 13, 10, 0
-    msgInvalidPrice BYTE "Precio invalido. Use un valor mayor que cero, por ejemplo 185.50.", 13, 10, 0
-    msgInvalidQty   BYTE "Cantidad invalida. Debe estar entre 1 y 100.", 13, 10, 0
-    msgStockLimit   BYTE "La existencia no puede superar 100 unidades.", 13, 10, 0
-    msgInsufficient BYTE "No hay existencias suficientes.", 13, 10, 0
-    msgSaleTotal    BYTE "Total de la venta: $", 0
-    msgDiscount     BYTE "Se aplico descuento del 10%.", 13, 10, 0
-    msgNoDiscount   BYTE "No aplica descuento.", 13, 10, 0
-    msgStock        BYTE "Existencias: ", 0
-    msgPrice        BYTE "Precio: $", 0
-    msgQuantity     BYTE "Cantidad a procesar: ", 0
-    msgUnits        BYTE "Unidades en inventario: ", 0
-    msgValue        BYTE "Valor del inventario: $", 0
-    msgRevenue      BYTE "Ingresos de la sesion: $", 0
-    msgFileError    BYTE "No se pudo leer o escribir el archivo de inventario.", 13, 10, 0
-    msgFileFormat   BYTE "El archivo no existe o su formato no es valido.", 13, 10, 0
-    msgLoadedCount  BYTE "Productos cargados: ", 0
-    msgProductCount BYTE "Productos registrados: ", 0
-    msgCodePrompt   BYTE "Codigo a buscar: ", 0
-    msgCodeForStock BYTE "Codigo del producto: ", 0
-    msgCodeForSale  BYTE "Codigo del producto a vender: ", 0
-    msgUnsaved      BYTE "Hay cambios sin guardar. Guardar antes de salir? (S/N): ", 0
-    msgSaveCancelled BYTE "No se pudo guardar. El programa seguira abierto.", 13, 10, 0
-
+    mensajeTitulo        BYTE "=== PAPELERIA DEL VALLE ===", 13, 10, 0
+    mensajeMenu1        BYTE "1) Registrar producto", 13, 10, 0
+    mensajeMenu2        BYTE "2) Mostrar inventario", 13, 10, 0
+    mensajeMenu3        BYTE "3) Buscar por codigo", 13, 10, 0
+    mensajeMenu4        BYTE "4) Recibir mercancia", 13, 10, 0
+    mensajeMenu5        BYTE "5) Vender producto", 13, 10, 0
+    mensajeMenu6        BYTE "6) Mostrar resumen", 13, 10, 0
+    mensajeMenu7        BYTE "7) Guardar catalogo", 13, 10, 0
+    mensajeMenu8        BYTE "8) Cargar catalogo", 13, 10, 0
+    mensajeMenu9        BYTE "9) Regla de negocio", 13, 10, 0
+    mensajeMenu0        BYTE "0) Salir", 13, 10, 0
+    preguntaMenu      BYTE "Seleccione una opcion: ", 0
+    preguntaCodigo      BYTE "Codigo (ABC-123): ", 0
+    preguntaNombre      BYTE "Nombre del producto: ", 0
+    preguntaPrecio     BYTE "Precio en MXN (ej. 185.50): ", 0
+    preguntaCantidad       BYTE "Cantidad: ", 0
+    mensajeInvalido      BYTE "Entrada invalida. Intente otra vez.", 13, 10, 0
+    mensajeRegistrado      BYTE "Producto registrado correctamente.", 13, 10, 0
+    mensajeMercanciaRecibida BYTE "Mercancia recibida correctamente.", 13, 10, 0
+    mensajeDuplicado    BYTE "Codigo duplicado.", 13, 10, 0
+    mensajeNoEncontrado     BYTE "Producto no encontrado.", 13, 10, 0
+    mensajeGuardado        BYTE "Catalogo guardado correctamente.", 13, 10, 0
+    mensajeCargado       BYTE "Catalogo cargado correctamente.", 13, 10, 0
+    mensajeResumen      BYTE "Resumen general:", 13, 10, 0
+    mensajeRegla         BYTE "Regla del negocio: descuento del 10% en compras de 5 o mas unidades.", 13, 10, 0
+    mensajeSalida         BYTE "Gracias por usar la papeleria.", 13, 10, 0
+    mensajeSinProductos   BYTE "No hay productos registrados.", 13, 10, 0
+    mensajeInventarioLleno         BYTE "El inventario ya tiene 10 productos.", 13, 10, 0
+    mensajeCodigoInvalido  BYTE "Codigo invalido. Use el formato ABC-123.", 13, 10, 0
+    mensajePrecioInvalido BYTE "Precio invalido. Use un valor mayor que cero, por ejemplo 185.50.", 13, 10, 0
+    mensajeCantidadInvalida   BYTE "Cantidad invalida. Debe estar entre 1 y 100.", 13, 10, 0
+    mensajeLimiteExistencia   BYTE "La existencia no puede superar 100 unidades.", 13, 10, 0
+    mensajeExistenciaInsuficiente BYTE "No hay existencias suficientes.", 13, 10, 0
+    mensajeTotalVenta    BYTE "Total de la venta: $", 0
+    mensajeDescuento     BYTE "Se aplico descuento del 10%.", 13, 10, 0
+    mensajeSinDescuento   BYTE "No aplica descuento.", 13, 10, 0
+    mensajeExistencia        BYTE "Existencias: ", 0
+    mensajePrecio        BYTE "Precio: $", 0
+    mensajeCantidad     BYTE "Cantidad a procesar: ", 0
+    mensajeUnidades        BYTE "Unidades en inventario: ", 0
+    mensajeValorInventario        BYTE "Valor del inventario: $", 0
+    mensajeIngresos      BYTE "Ingresos de la sesion: $", 0
+    mensajeErrorArchivo    BYTE "No se pudo leer o escribir el archivo de inventario.", 13, 10, 0
+    mensajeFormatoArchivo   BYTE "El archivo no existe o su formato no es valido.", 13, 10, 0
+    mensajeCantidadCargada  BYTE "Productos cargados: ", 0
+    mensajeCantidadProductos BYTE "Productos registrados: ", 0
+    mensajePreguntaCodigo   BYTE "Codigo a buscar: ", 0
+    mensajeCodigoMercancia BYTE "Codigo del producto: ", 0
+    mensajeCodigoVenta  BYTE "Codigo del producto a vender: ", 0
+    mensajeCambiosSinGuardar      BYTE "Hay cambios sin guardar. Guardar antes de salir? (S/N): ", 0
+    mensajeGuardadoCancelado BYTE "No se pudo guardar. El programa seguira abierto.", 13, 10, 0
 .code
 
 ;===========================================================
@@ -106,1349 +104,1237 @@ Product ENDS
 ; Entrada: EDX = puntero a la cadena.
 ; Salida:  AL = 1 si es valido, 0 si es invalido.
 ;===========================================================
-IsValidCode PROC USES ESI ECX
+EsCodigoValido PROC USES ESI ECX
     mov ESI, EDX
     cmp BYTE PTR [ESI+7], 0
-    jne InvalidCode
+    jne CodigoInvalido
 
     ; 3 letras iniciales
     mov ECX, 3
-CheckLetters:
+VerificarLetras:
     cmp ECX, 0
-    je CheckDash
+    je VerificarGuion
     mov AL, [ESI]
     cmp AL, 'A'
-    jb InvalidCode
+    jb CodigoInvalido
     cmp AL, 'Z'
-    ja InvalidCode
+    ja CodigoInvalido
     inc ESI
     dec ECX
-    jmp CheckLetters
+    jmp VerificarLetras
 
-CheckDash:
+VerificarGuion:
     mov AL, [ESI]
     cmp AL, '-'
-    jne InvalidCode
+    jne CodigoInvalido
     inc ESI
 
     ; 3 digitos finales
     mov ECX, 3
-CheckDigits:
+VerificarDigitos:
     cmp ECX, 0
-    je ValidCode
+    je CodigoValido
     mov AL, [ESI]
     cmp AL, '0'
-    jb InvalidCode
+    jb CodigoInvalido
     cmp AL, '9'
-    ja InvalidCode
+    ja CodigoInvalido
     inc ESI
     dec ECX
-    jmp CheckDigits
+    jmp VerificarDigitos
 
-ValidCode:
+CodigoValido:
     mov AL, 1
     ret
 
-InvalidCode:
+CodigoInvalido:
     mov AL, 0
     ret
-IsValidCode ENDP
+EsCodigoValido ENDP
 
 ;===========================================================
 ; Convierte una cadena con decimales a centavos enteros.
 ; Acepta 185.50, 12.05, 185, 0.01.
 ;===========================================================
-ParseMoneyToCents PROC USES ESI ECX EBX, pText:PTR BYTE
-    LOCAL whole:DWORD, frac:DWORD, sawDot:DWORD, digitsAfter:DWORD, digit:DWORD
+ConvertirPrecioACentavos PROC USES ESI ECX EBX, texto:PTR BYTE
+    LOCAL parteEntera:DWORD, fraccion:DWORD, hayPunto:DWORD, digitosDespues:DWORD, digito:DWORD
 
-    mov ESI, pText
-    mov whole, 0
-    mov frac, 0
-    mov sawDot, 0
-    mov digitsAfter, 0
-    mov digit, 0
+    mov ESI, texto
+    mov parteEntera, 0
+    mov fraccion, 0
+    mov hayPunto, 0
+    mov digitosDespues, 0
+    mov digito, 0
 
-ScanLoop:
+BucleLectura:
     mov AL, [ESI]
     cmp AL, 0
-    je FinishScan
+    je FinLectura
     cmp AL, '.'
-    je DotFound
+    je PuntoEncontrado
     cmp AL, '0'
-    jb InvalidMoney
+    jb PrecioInvalido
     cmp AL, '9'
-    ja InvalidMoney
+    ja PrecioInvalido
 
     movzx EAX, AL
     sub EAX, '0'
-    mov digit, EAX
-    cmp sawDot, 0
-    jne FractionDigit
+    mov digito, EAX
+    cmp hayPunto, 0
+    jne DigitoFraccion
 
-    mov EAX, whole
+    mov EAX, parteEntera
     mov ECX, 10
     mul ECX
     test EDX, EDX
-    jnz InvalidMoney
-    add EAX, digit
-    jc InvalidMoney
-    mov whole, EAX
-    jmp NextChar
+    jnz PrecioInvalido
+    add EAX, digito
+    jc PrecioInvalido
+    mov parteEntera, EAX
+    jmp SiguienteCaracter
 
-FractionDigit:
-    cmp digitsAfter, 2
-    jae InvalidMoney
-    mov EAX, frac
+DigitoFraccion:
+    cmp digitosDespues, 2
+    jae PrecioInvalido
+    mov EAX, fraccion
     mov ECX, 10
     mul ECX
     test EDX, EDX
-    jnz InvalidMoney
-    add EAX, digit
-    mov frac, EAX
-    inc digitsAfter
-    jmp NextChar
+    jnz PrecioInvalido
+    add EAX, digito
+    mov fraccion, EAX
+    inc digitosDespues
+    jmp SiguienteCaracter
 
-DotFound:
-    cmp sawDot, 0
-    jne InvalidMoney
-    mov sawDot, 1
-    jmp NextChar
+PuntoEncontrado:
+    cmp hayPunto, 0
+    jne PrecioInvalido
+    mov hayPunto, 1
+    jmp SiguienteCaracter
 
-NextChar:
+SiguienteCaracter:
     inc ESI
-    jmp ScanLoop
+    jmp BucleLectura
 
-FinishScan:
-    cmp whole, 0
-    jne HasValue
-    cmp digitsAfter, 0
-    je InvalidMoney
-HasValue:
-    cmp digitsAfter, 0
-    je MoneyWithoutFraction
-    cmp digitsAfter, 1
-    jne CheckTwoDigits
-    mov EAX, frac
+FinLectura:
+    cmp parteEntera, 0
+    jne TieneValor
+    cmp digitosDespues, 0
+    je PrecioInvalido
+TieneValor:
+    cmp digitosDespues, 0
+    je PrecioSinFraccion
+    cmp digitosDespues, 1
+    jne VerificarDosDigitos
+    mov EAX, fraccion
     mov ECX, 10
     mul ECX
-    mov frac, EAX
-    jmp ComposeMoney
+    mov fraccion, EAX
+    jmp FormarPrecio
 
-CheckTwoDigits:
-    cmp digitsAfter, 2
-    jne InvalidMoney
+VerificarDosDigitos:
+    cmp digitosDespues, 2
+    jne PrecioInvalido
 
-ComposeMoney:
-    mov EAX, whole
+FormarPrecio:
+    mov EAX, parteEntera
     mov ECX, 100
     mul ECX
     test EDX, EDX
-    jnz InvalidMoney
-    add EAX, frac
-    jc InvalidMoney
+    jnz PrecioInvalido
+    add EAX, fraccion
+    jc PrecioInvalido
     mov EDX, 1
     ret
 
-MoneyWithoutFraction:
-    cmp sawDot, 0
-    jne InvalidMoney
-    mov EAX, whole
+PrecioSinFraccion:
+    cmp hayPunto, 0
+    jne PrecioInvalido
+    mov EAX, parteEntera
     mov ECX, 100
     mul ECX
     test EDX, EDX
-    jnz InvalidMoney
+    jnz PrecioInvalido
     mov EDX, 1
     ret
 
-InvalidMoney:
+PrecioInvalido:
     mov EAX, 0
     xor EDX, EDX
     ret
-ParseMoneyToCents ENDP
+ConvertirPrecioACentavos ENDP
 
 ;===========================================================
 ; Busca un producto por su código.
 ; Retorna el índice del arreglo si existe, o -1 si no existe.
 ;===========================================================
-FindProductByCode PROC USES ESI EDI EBX ECX, pCode:PTR BYTE
-    LOCAL charCount:DWORD
+BuscarProductoPorCodigo PROC USES ESI EDI EBX ECX, codigo:PTR BYTE
+    LOCAL cantidadCaracteres:DWORD
     mov EDI, 0
-    mov ECX, productCount
+    mov ECX, cantidadProductos
 
-SearchLoop:
+BucleBusqueda:
     cmp ECX, 0
-    je NotFound
+    je NoEncontrado
 
     mov EAX, EDI
-    imul EAX, TYPE Product
-    mov ESI, OFFSET productArray
+    imul EAX, TYPE Producto
+    mov ESI, OFFSET arregloProductos
     add ESI, EAX
-    lea ESI, [ESI + Product.Code]
+    lea ESI, [ESI + Producto.Codigo]
 
-    mov EBX, pCode
-    mov charCount, MAX_CODE_LEN
+    mov EBX, codigo
+    mov cantidadCaracteres, LONGITUD_MAX_CODIGO
 
-CompareLoop:
-    cmp charCount, 0
-    je Found
+BucleComparacion:
+    cmp cantidadCaracteres, 0
+    je Encontrado
     mov AL, [ESI]
     mov DL, [EBX]
     cmp AL, DL
-    jne NextItem
+    jne SiguienteProducto
     cmp AL, 0
-    je Found
+    je Encontrado
     inc ESI
     inc EBX
-    dec charCount
-    jmp CompareLoop
+    dec cantidadCaracteres
+    jmp BucleComparacion
 
-NextItem:
+SiguienteProducto:
     inc EDI
     dec ECX
-    jmp SearchLoop
+    jmp BucleBusqueda
 
-Found:
+Encontrado:
     mov EAX, EDI
     ret
 
-NotFound:
+NoEncontrado:
     mov EAX, -1
     ret
-FindProductByCode ENDP
+BuscarProductoPorCodigo ENDP
 
 ;===========================================================
 ; Muestra el menú principal.
 ;===========================================================
-DisplayMenu PROC
+MostrarMenu PROC
     call Crlf
-    mov EDX, OFFSET msgTitle
+    mov EDX, OFFSET mensajeTitulo
     call WriteString
-    mov EDX, OFFSET msgMenu1
+    mov EDX, OFFSET mensajeMenu1
     call WriteString
-    mov EDX, OFFSET msgMenu2
+    mov EDX, OFFSET mensajeMenu2
     call WriteString
-    mov EDX, OFFSET msgMenu3
+    mov EDX, OFFSET mensajeMenu3
     call WriteString
-    mov EDX, OFFSET msgMenu4
+    mov EDX, OFFSET mensajeMenu4
     call WriteString
-    mov EDX, OFFSET msgMenu5
+    mov EDX, OFFSET mensajeMenu5
     call WriteString
-    mov EDX, OFFSET msgMenu6
+    mov EDX, OFFSET mensajeMenu6
     call WriteString
-    mov EDX, OFFSET msgMenu7
+    mov EDX, OFFSET mensajeMenu7
     call WriteString
-    mov EDX, OFFSET msgMenu8
+    mov EDX, OFFSET mensajeMenu8
     call WriteString
-    mov EDX, OFFSET msgMenu9
+    mov EDX, OFFSET mensajeMenu9
     call WriteString
-    mov EDX, OFFSET msgMenu0
+    mov EDX, OFFSET mensajeMenu0
     call WriteString
-    mov EDX, OFFSET promptMenu
+    mov EDX, OFFSET preguntaMenu
     call WriteString
 
-    mov EDX, OFFSET menuChoice
-    mov ECX, SIZEOF menuChoice
+    mov EDX, OFFSET opcionMenu
+    mov ECX, SIZEOF opcionMenu
     call ReadString
     ret
-DisplayMenu ENDP
-
-;===========================================================
-; Inicializa un catálogo de demostración.
-;===========================================================
-InitDemoInventory PROC
-    mov productCount, 3
-
-    ; Producto 1: ABC-123
-    mov ESI, OFFSET productArray
-    lea EAX, [ESI + Product.Code]
-    mov BYTE PTR [EAX], 'A'
-    mov BYTE PTR [EAX+1], 'B'
-    mov BYTE PTR [EAX+2], 'C'
-    mov BYTE PTR [EAX+3], '-'
-    mov BYTE PTR [EAX+4], '1'
-    mov BYTE PTR [EAX+5], '2'
-    mov BYTE PTR [EAX+6], '3'
-    mov BYTE PTR [EAX+7], 0
-
-    lea EAX, [ESI + Product.ProdName]
-    mov BYTE PTR [EAX], 'C'
-    mov BYTE PTR [EAX+1], 'u'
-    mov BYTE PTR [EAX+2], 'a'
-    mov BYTE PTR [EAX+3], 'd'
-    mov BYTE PTR [EAX+4], 'e'
-    mov BYTE PTR [EAX+5], 'r'
-    mov BYTE PTR [EAX+6], 'n'
-    mov BYTE PTR [EAX+7], 'o'
-    mov BYTE PTR [EAX+8], ' '
-    mov BYTE PTR [EAX+9], 'p'
-    mov BYTE PTR [EAX+10], 'r'
-    mov BYTE PTR [EAX+11], 'o'
-    mov BYTE PTR [EAX+12], 'f'
-    mov BYTE PTR [EAX+13], 'e'
-    mov BYTE PTR [EAX+14], 's'
-    mov BYTE PTR [EAX+15], 'i'
-    mov BYTE PTR [EAX+16], 'o'
-    mov BYTE PTR [EAX+17], 'n'
-    mov BYTE PTR [EAX+18], 'a'
-    mov BYTE PTR [EAX+19], 'l'
-    mov BYTE PTR [EAX+20], 0
-    mov DWORD PTR [ESI + Product.PriceCents], 25000
-    mov DWORD PTR [ESI + Product.Quantity], 30
-
-    ; Producto 2: DEF-456
-    add ESI, TYPE Product
-    lea EAX, [ESI + Product.Code]
-    mov BYTE PTR [EAX], 'D'
-    mov BYTE PTR [EAX+1], 'E'
-    mov BYTE PTR [EAX+2], 'F'
-    mov BYTE PTR [EAX+3], '-'
-    mov BYTE PTR [EAX+4], '4'
-    mov BYTE PTR [EAX+5], '5'
-    mov BYTE PTR [EAX+6], '6'
-    mov BYTE PTR [EAX+7], 0
-
-    lea EAX, [ESI + Product.ProdName]
-    mov BYTE PTR [EAX], 'P'
-    mov BYTE PTR [EAX+1], 'l'
-    mov BYTE PTR [EAX+2], 'u'
-    mov BYTE PTR [EAX+3], 'm'
-    mov BYTE PTR [EAX+4], 'a'
-    mov BYTE PTR [EAX+5], ' '
-    mov BYTE PTR [EAX+6], 'a'
-    mov BYTE PTR [EAX+7], 'z'
-    mov BYTE PTR [EAX+8], 'u'
-    mov BYTE PTR [EAX+9], 'l'
-    mov BYTE PTR [EAX+10], 0
-    mov DWORD PTR [ESI + Product.PriceCents], 18000
-    mov DWORD PTR [ESI + Product.Quantity], 50
-
-    ; Producto 3: GHI-789
-    add ESI, TYPE Product
-    lea EAX, [ESI + Product.Code]
-    mov BYTE PTR [EAX], 'G'
-    mov BYTE PTR [EAX+1], 'H'
-    mov BYTE PTR [EAX+2], 'I'
-    mov BYTE PTR [EAX+3], '-'
-    mov BYTE PTR [EAX+4], '7'
-    mov BYTE PTR [EAX+5], '8'
-    mov BYTE PTR [EAX+6], '9'
-    mov BYTE PTR [EAX+7], 0
-
-    lea EAX, [ESI + Product.ProdName]
-    mov BYTE PTR [EAX], 'R'
-    mov BYTE PTR [EAX+1], 'e'
-    mov BYTE PTR [EAX+2], 's'
-    mov BYTE PTR [EAX+3], 'a'
-    mov BYTE PTR [EAX+4], 'l'
-    mov BYTE PTR [EAX+5], 't'
-    mov BYTE PTR [EAX+6], 'a'
-    mov BYTE PTR [EAX+7], 'd'
-    mov BYTE PTR [EAX+8], 'o'
-    mov BYTE PTR [EAX+9], 'r'
-    mov BYTE PTR [EAX+10], ' '
-    mov BYTE PTR [EAX+11], 'a'
-    mov BYTE PTR [EAX+12], 'm'
-    mov BYTE PTR [EAX+13], 'a'
-    mov BYTE PTR [EAX+14], 'r'
-    mov BYTE PTR [EAX+15], 'i'
-    mov BYTE PTR [EAX+16], 'l'
-    mov BYTE PTR [EAX+17], 'l'
-    mov BYTE PTR [EAX+18], 'o'
-    mov BYTE PTR [EAX+19], 0
-    mov DWORD PTR [ESI + Product.PriceCents], 12000
-    mov DWORD PTR [ESI + Product.Quantity], 25
-
-    mov EDX, OFFSET msgDemo
-    call WriteString
-    ret
-InitDemoInventory ENDP
+MostrarMenu ENDP
 
 ; Lee una linea y devuelve su longitud en EAX.
-ReadInput PROC USES EDX ECX, pPrompt:PTR BYTE, pBuffer:PTR BYTE, maxLength:DWORD
-    mov EDX, pPrompt
+LeerEntrada PROC USES EDX ECX, pregunta:PTR BYTE, buffer:PTR BYTE, longitudMaxima:DWORD
+    mov EDX, pregunta
     call WriteString
-    mov EDX, pBuffer
-    mov ECX, maxLength
+    mov EDX, buffer
+    mov ECX, longitudMaxima
     call ReadString
     ret
-ReadInput ENDP
+LeerEntrada ENDP
 
 ; Convierte una cadena de digitos a DWORD.
 ; EDX=1 indica exito; EDX=0 indica entrada invalida.
-ParseUnsigned PROC USES EBX ECX ESI, pText:PTR BYTE, maxValue:DWORD
-    LOCAL value:DWORD, digit:DWORD, digitCount:DWORD
-    mov ESI, pText
-    mov value, 0
-    mov digitCount, 0
+ConvertirEnteroSinSigno PROC USES EBX ECX ESI, texto:PTR BYTE, valorMaximo:DWORD
+    LOCAL valor:DWORD, digito:DWORD, cantidadDigitos:DWORD
+    mov ESI, texto
+    mov valor, 0
+    mov cantidadDigitos, 0
 
-ParseUnsignedLoop:
+BucleConversionEntero:
     mov AL, [ESI]
     cmp AL, 0
-    je ParseUnsignedDone
+    je FinConversionEntero
     cmp AL, '0'
-    jb ParseUnsignedInvalid
+    jb EnteroInvalido
     cmp AL, '9'
-    ja ParseUnsignedInvalid
+    ja EnteroInvalido
     movzx EAX, AL
     sub EAX, '0'
-    mov digit, EAX
-    mov EAX, value
+    mov digito, EAX
+    mov EAX, valor
     mov EBX, 10
     mul EBX
     test EDX, EDX
-    jnz ParseUnsignedInvalid
-    add EAX, digit
-    jc ParseUnsignedInvalid
-    cmp EAX, maxValue
-    ja ParseUnsignedInvalid
-    mov value, EAX
-    inc digitCount
+    jnz EnteroInvalido
+    add EAX, digito
+    jc EnteroInvalido
+    cmp EAX, valorMaximo
+    ja EnteroInvalido
+    mov valor, EAX
+    inc cantidadDigitos
     inc ESI
-    jmp ParseUnsignedLoop
+    jmp BucleConversionEntero
 
-ParseUnsignedDone:
-    cmp digitCount, 0
-    je ParseUnsignedInvalid
-    mov EAX, value
+FinConversionEntero:
+    cmp cantidadDigitos, 0
+    je EnteroInvalido
+    mov EAX, valor
     mov EDX, 1
     ret
 
-ParseUnsignedInvalid:
+EnteroInvalido:
     xor EAX, EAX
     xor EDX, EDX
     ret
-ParseUnsigned ENDP
+ConvertirEnteroSinSigno ENDP
 
-ReadNumber PROC, pPrompt:PTR BYTE, maxValue:DWORD
-    invoke ReadInput, pPrompt, ADDR inputBuffer, SIZEOF inputBuffer-1
+LeerNumero PROC, pregunta:PTR BYTE, valorMaximo:DWORD
+    invoke LeerEntrada, pregunta, ADDR bufferEntrada, SIZEOF bufferEntrada-1
     cmp EAX, 0
-    je ReadNumberInvalid
-    invoke ParseUnsigned, ADDR inputBuffer, maxValue
+    je NumeroInvalido
+    invoke ConvertirEnteroSinSigno, ADDR bufferEntrada, valorMaximo
     test EDX, EDX
-    jz ReadNumberInvalid
+    jz NumeroInvalido
     ret
-ReadNumberInvalid:
+NumeroInvalido:
     mov EAX, -1
     ret
-ReadNumber ENDP
+LeerNumero ENDP
 
 ; Divide el valor de 64 bits EDX:EAX entre 10.
 ; Devuelve el cociente en EDX:EAX y el residuo en ECX.
-Divide64By10 PROC USES EBX
-    LOCAL highPart:DWORD, lowPart:DWORD, remainder:DWORD
-    mov highPart, EDX
-    mov lowPart, EAX
-    mov EAX, highPart
+Dividir64Entre10 PROC USES EBX
+    LOCAL parteAlta:DWORD, parteBaja:DWORD, residuo:DWORD
+    mov parteAlta, EDX
+    mov parteBaja, EAX
+    mov EAX, parteAlta
     xor EDX, EDX
     mov EBX, 10
     div EBX
-    mov highPart, EAX
-    mov remainder, EDX
-    mov EAX, lowPart
-    mov EDX, remainder
+    mov parteAlta, EAX
+    mov residuo, EDX
+    mov EAX, parteBaja
+    mov EDX, residuo
     div EBX
-    mov lowPart, EAX
+    mov parteBaja, EAX
     mov ECX, EDX
-    mov EDX, highPart
-    mov EAX, lowPart
+    mov EDX, parteAlta
+    mov EAX, parteBaja
     ret
-Divide64By10 ENDP
+Dividir64Entre10 ENDP
 
 ; Imprime como decimal sin signo el valor de 64 bits en EDX:EAX.
-WriteUnsigned64 PROC USES EBX ECX ESI
-    LOCAL highPart:DWORD, lowPart:DWORD, digitCount:DWORD, remainder:DWORD
-    mov highPart, EDX
-    mov lowPart, EAX
-    mov digitCount, 0
+EscribirEnteroSinSigno64 PROC USES EBX ECX ESI
+    LOCAL parteAlta:DWORD, parteBaja:DWORD, cantidadDigitos:DWORD, residuo:DWORD
+    mov parteAlta, EDX
+    mov parteBaja, EAX
+    mov cantidadDigitos, 0
 
-WriteUnsignedConvert:
-    mov EAX, highPart
+ConvertirParaEscritura:
+    mov EAX, parteAlta
     xor EDX, EDX
     mov EBX, 10
     div EBX
-    mov highPart, EAX
-    mov remainder, EDX
-    mov EAX, lowPart
-    mov EDX, remainder
+    mov parteAlta, EAX
+    mov residuo, EDX
+    mov EAX, parteBaja
+    mov EDX, residuo
     div EBX
-    mov lowPart, EAX
-    mov ESI, digitCount
-    mov BYTE PTR reverseDigits[ESI], DL
-    add BYTE PTR reverseDigits[ESI], '0'
-    inc digitCount
-    mov EAX, highPart
-    or EAX, lowPart
-    jnz WriteUnsignedConvert
+    mov parteBaja, EAX
+    mov ESI, cantidadDigitos
+    mov BYTE PTR digitosInvertidos[ESI], DL
+    add BYTE PTR digitosInvertidos[ESI], '0'
+    inc cantidadDigitos
+    mov EAX, parteAlta
+    or EAX, parteBaja
+    jnz ConvertirParaEscritura
 
-WriteUnsignedOutput:
-    mov ECX, digitCount
+EscribirDigitos:
+    mov ECX, cantidadDigitos
     dec ECX
-    mov AL, reverseDigits[ECX]
+    mov AL, digitosInvertidos[ECX]
     call WriteChar
-    dec digitCount
-    jnz WriteUnsignedOutput
+    dec cantidadDigitos
+    jnz EscribirDigitos
     ret
-WriteUnsigned64 ENDP
+EscribirEnteroSinSigno64 ENDP
 
 ; Convierte EDX:EAX (centavos) a moneda con dos decimales y la imprime.
-WriteCurrency64 PROC USES EBX
-    LOCAL highPart:DWORD, lowPart:DWORD, remainder:DWORD
-    LOCAL fractionTens:DWORD, fractionUnits:DWORD
-    mov highPart, EDX
-    mov lowPart, EAX
-    mov EAX, highPart
+EscribirMoneda64 PROC USES EBX
+    LOCAL parteAlta:DWORD, parteBaja:DWORD, residuo:DWORD
+    LOCAL decenasCentavos:DWORD, unidadesCentavos:DWORD
+    mov parteAlta, EDX
+    mov parteBaja, EAX
+    mov EAX, parteAlta
     xor EDX, EDX
     mov EBX, 100
     div EBX
-    mov highPart, EAX
-    mov remainder, EDX
-    mov EAX, lowPart
-    mov EDX, remainder
+    mov parteAlta, EAX
+    mov residuo, EDX
+    mov EAX, parteBaja
+    mov EDX, residuo
     div EBX
-    mov lowPart, EAX
-    mov remainder, EDX
-    mov EDX, highPart
-    mov EAX, lowPart
-    call WriteUnsigned64
+    mov parteBaja, EAX
+    mov residuo, EDX
+    mov EDX, parteAlta
+    mov EAX, parteBaja
+    call EscribirEnteroSinSigno64
     mov AL, '.'
     call WriteChar
-    mov EAX, remainder
+    mov EAX, residuo
     xor EDX, EDX
     mov EBX, 10
     div EBX
-    mov fractionTens, EAX
-    mov fractionUnits, EDX
-    mov EAX, fractionTens
+    mov decenasCentavos, EAX
+    mov unidadesCentavos, EDX
+    mov EAX, decenasCentavos
     add AL, '0'
     call WriteChar
-    mov EAX, fractionUnits
+    mov EAX, unidadesCentavos
     add AL, '0'
     call WriteChar
     ret
-WriteCurrency64 ENDP
+EscribirMoneda64 ENDP
 
-PrintProduct PROC USES ESI EBX, productIndex:DWORD
-    LOCAL fraction:DWORD
-    mov EAX, productIndex
-    imul EAX, TYPE Product
-    mov ESI, OFFSET productArray
+MostrarProducto PROC USES ESI EBX, indiceProducto:DWORD
+    LOCAL centavosRestantes:DWORD
+    mov EAX, indiceProducto
+    imul EAX, TYPE Producto
+    mov ESI, OFFSET arregloProductos
     add ESI, EAX
     mov EDX, ESI
     call WriteString
     mov AL, ' '
     call WriteChar
-    lea EDX, [ESI + Product.ProdName]
+    lea EDX, [ESI + Producto.Nombre]
     call WriteString
     mov AL, ' '
     call WriteChar
     mov AL, '$'
     call WriteChar
-    mov EAX, [ESI + Product.PriceCents]
+    mov EAX, [ESI + Producto.PrecioCentavos]
     xor EDX, EDX
     mov EBX, 100
     div EBX
-    mov fraction, EDX
+    mov centavosRestantes, EDX
     call WriteDec
     mov AL, '.'
     call WriteChar
-    cmp fraction, 10
-    jae PrintProductFraction
+    cmp centavosRestantes, 10
+    jae EscribirCentavosProducto
     mov AL, '0'
     call WriteChar
-PrintProductFraction:
-    mov EAX, fraction
+EscribirCentavosProducto:
+    mov EAX, centavosRestantes
     call WriteDec
     mov AL, ' '
     call WriteChar
-    mov EDX, OFFSET msgStock
+    mov EDX, OFFSET mensajeExistencia
     call WriteString
-    mov EAX, [ESI + Product.Quantity]
+    mov EAX, [ESI + Producto.Existencia]
     call WriteDec
     call Crlf
     ret
-PrintProduct ENDP
+MostrarProducto ENDP
 
-ShowInventory PROC USES ESI
-    LOCAL itemIndex:DWORD
-    cmp productCount, 0
-    jne ShowInventoryItems
-    mov EDX, OFFSET msgNoProducts
+MostrarInventario PROC USES ESI
+    LOCAL indiceProducto:DWORD
+    cmp cantidadProductos, 0
+    jne HayProductos
+    mov EDX, OFFSET mensajeSinProductos
     call WriteString
     ret
-ShowInventoryItems:
-    mov itemIndex, 0
-ShowInventoryLoop:
-    mov EAX, itemIndex
-    cmp EAX, productCount
-    jae ShowInventoryDone
-    invoke PrintProduct, EAX
-    inc itemIndex
-    jmp ShowInventoryLoop
-ShowInventoryDone:
+HayProductos:
+    mov indiceProducto, 0
+BucleMostrarProductos:
+    mov EAX, indiceProducto
+    cmp EAX, cantidadProductos
+    jae FinMostrarInventario
+    invoke MostrarProducto, EAX
+    inc indiceProducto
+    jmp BucleMostrarProductos
+FinMostrarInventario:
     ret
-ShowInventory ENDP
+MostrarInventario ENDP
 
-AddProduct PROC USES ESI EDI EBX
-    LOCAL enteredPrice:DWORD, enteredQuantity:DWORD
-    cmp productCount, MAX_PRODUCTS
-    jb AddProductInput
-    mov EDX, OFFSET msgFull
+RegistrarProducto PROC USES ESI EDI EBX
+    LOCAL precioCapturado:DWORD, existenciaCapturada:DWORD
+    cmp cantidadProductos, MAX_PRODUCTOS
+    jb CapturarProducto
+    mov EDX, OFFSET mensajeInventarioLleno
     call WriteString
     ret
-AddProductInput:
-    invoke ReadInput, ADDR promptCode, ADDR tempCode, SIZEOF tempCode-1
-    mov EDX, OFFSET tempCode
-    call IsValidCode
+CapturarProducto:
+    invoke LeerEntrada, ADDR preguntaCodigo, ADDR codigoTemporal, SIZEOF codigoTemporal-1
+    mov EDX, OFFSET codigoTemporal
+    call EsCodigoValido
     cmp AL, 1
-    je AddProductCheckDuplicate
-    mov EDX, OFFSET msgInvalidCode
+    je VerificarDuplicado
+    mov EDX, OFFSET mensajeCodigoInvalido
     call WriteString
     ret
-AddProductCheckDuplicate:
-    invoke FindProductByCode, ADDR tempCode
+VerificarDuplicado:
+    invoke BuscarProductoPorCodigo, ADDR codigoTemporal
     cmp EAX, -1
-    je AddProductName
-    mov EDX, OFFSET msgDuplicate
+    je CapturarNombre
+    mov EDX, OFFSET mensajeDuplicado
     call WriteString
     ret
-AddProductName:
-    invoke ReadInput, ADDR promptName, ADDR tempName, SIZEOF tempName-1
+CapturarNombre:
+    invoke LeerEntrada, ADDR preguntaNombre, ADDR nombreTemporal, SIZEOF nombreTemporal-1
     cmp EAX, 0
-    je AddProductInvalidName
-    cmp EAX, MAX_NAME_LEN
-    ja AddProductInvalidName
-    mov ESI, OFFSET tempName
-AddProductCheckName:
+    je NombreInvalido
+    cmp EAX, LONGITUD_MAX_NOMBRE
+    ja NombreInvalido
+    mov ESI, OFFSET nombreTemporal
+VerificarNombre:
     mov AL, [ESI]
     cmp AL, 0
-    je AddProductNameAccepted
+    je NombreAceptado
     cmp AL, '|'
-    je AddProductInvalidName
+    je NombreInvalido
     inc ESI
-    jmp AddProductCheckName
-AddProductNameAccepted:
-    invoke ReadInput, ADDR promptPrice, ADDR inputBuffer, SIZEOF inputBuffer-1
+    jmp VerificarNombre
+NombreAceptado:
+    invoke LeerEntrada, ADDR preguntaPrecio, ADDR bufferEntrada, SIZEOF bufferEntrada-1
     cmp EAX, 0
-    je AddProductInvalidPrice
-    invoke ParseMoneyToCents, ADDR inputBuffer
+    je PrecioCapturadoInvalido
+    invoke ConvertirPrecioACentavos, ADDR bufferEntrada
     test EDX, EDX
-    jz AddProductInvalidPrice
+    jz PrecioCapturadoInvalido
     cmp EAX, 0
-    je AddProductInvalidPrice
-    mov enteredPrice, EAX
-    invoke ReadNumber, ADDR promptQty, MAX_STOCK
+    je PrecioCapturadoInvalido
+    mov precioCapturado, EAX
+    invoke LeerNumero, ADDR preguntaCantidad, EXISTENCIA_MAXIMA
     cmp EAX, -1
-    je AddProductInvalidQuantity
+    je ExistenciaCapturadaInvalida
     cmp EAX, 1
-    jb AddProductInvalidQuantity
-    mov enteredQuantity, EAX
+    jb ExistenciaCapturadaInvalida
+    mov existenciaCapturada, EAX
 
-    mov EAX, productCount
-    imul EAX, TYPE Product
-    mov ESI, OFFSET productArray
+    mov EAX, cantidadProductos
+    imul EAX, TYPE Producto
+    mov ESI, OFFSET arregloProductos
     add ESI, EAX
-    lea EDI, [ESI + Product.Code]
-    mov ESI, OFFSET tempCode
-    mov ECX, MAX_CODE_LEN
+    lea EDI, [ESI + Producto.Codigo]
+    mov ESI, OFFSET codigoTemporal
+    mov ECX, LONGITUD_MAX_CODIGO
     cld
     rep movsb
 
-    mov EAX, productCount
-    imul EAX, TYPE Product
-    mov ESI, OFFSET productArray
+    mov EAX, cantidadProductos
+    imul EAX, TYPE Producto
+    mov ESI, OFFSET arregloProductos
     add ESI, EAX
-    lea EDI, [ESI + Product.ProdName]
-    mov ESI, OFFSET tempName
-    mov ECX, MAX_NAME_LEN+1
+    lea EDI, [ESI + Producto.Nombre]
+    mov ESI, OFFSET nombreTemporal
+    mov ECX, LONGITUD_MAX_NOMBRE+1
     cld
     rep movsb
-    mov EAX, productCount
-    imul EAX, TYPE Product
-    mov ESI, OFFSET productArray
+    mov EAX, cantidadProductos
+    imul EAX, TYPE Producto
+    mov ESI, OFFSET arregloProductos
     add ESI, EAX
-    mov EAX, enteredPrice
-    mov [ESI + Product.PriceCents], EAX
-    mov EAX, enteredQuantity
-    mov [ESI + Product.Quantity], EAX
-    inc productCount
-    mov unsavedChanges, 1
-    mov EDX, OFFSET msgCreated
+    mov EAX, precioCapturado
+    mov [ESI + Producto.PrecioCentavos], EAX
+    mov EAX, existenciaCapturada
+    mov [ESI + Producto.Existencia], EAX
+    inc cantidadProductos
+    mov cambiosSinGuardar, 1
+    mov EDX, OFFSET mensajeRegistrado
     call WriteString
     ret
-AddProductInvalidName:
-    mov EDX, OFFSET msgInvalid
+NombreInvalido:
+    mov EDX, OFFSET mensajeInvalido
     call WriteString
     ret
-AddProductInvalidPrice:
-    mov EDX, OFFSET msgInvalidPrice
+PrecioCapturadoInvalido:
+    mov EDX, OFFSET mensajePrecioInvalido
     call WriteString
     ret
-AddProductInvalidQuantity:
-    mov EDX, OFFSET msgInvalidQty
+ExistenciaCapturadaInvalida:
+    mov EDX, OFFSET mensajeCantidadInvalida
     call WriteString
     ret
-AddProduct ENDP
+RegistrarProducto ENDP
 
-ReadProductCode PROC, pPrompt:PTR BYTE
-    invoke ReadInput, pPrompt, ADDR tempCode, SIZEOF tempCode-1
-    mov EDX, OFFSET tempCode
-    call IsValidCode
+LeerCodigoProducto PROC, pregunta:PTR BYTE
+    invoke LeerEntrada, pregunta, ADDR codigoTemporal, SIZEOF codigoTemporal-1
+    mov EDX, OFFSET codigoTemporal
+    call EsCodigoValido
     ret
-ReadProductCode ENDP
+LeerCodigoProducto ENDP
 
-SearchProduct PROC
-    invoke ReadProductCode, ADDR msgCodePrompt
+BuscarProducto PROC
+    invoke LeerCodigoProducto, ADDR mensajePreguntaCodigo
     cmp AL, 1
-    je SearchProductFind
-    mov EDX, OFFSET msgInvalidCode
+    je BuscarCoincidencia
+    mov EDX, OFFSET mensajeCodigoInvalido
     call WriteString
     ret
-SearchProductFind:
-    invoke FindProductByCode, ADDR tempCode
+BuscarCoincidencia:
+    invoke BuscarProductoPorCodigo, ADDR codigoTemporal
     cmp EAX, -1
-    je SearchProductMissing
-    invoke PrintProduct, EAX
+    je ProductoNoEncontrado
+    invoke MostrarProducto, EAX
     ret
-SearchProductMissing:
-    mov EDX, OFFSET msgNotFound
+ProductoNoEncontrado:
+    mov EDX, OFFSET mensajeNoEncontrado
     call WriteString
     ret
-SearchProduct ENDP
+BuscarProducto ENDP
 
-ReceiveStock PROC USES EBX ESI
-    LOCAL productIndex:DWORD, amount:DWORD
-    invoke ReadProductCode, ADDR msgCodeForStock
+RecibirMercancia PROC USES EBX ESI
+    LOCAL indiceProducto:DWORD, cantidad:DWORD
+    invoke LeerCodigoProducto, ADDR mensajeCodigoMercancia
     cmp AL, 1
-    je ReceiveStockFind
-    mov EDX, OFFSET msgInvalidCode
+    je BuscarProductoMercancia
+    mov EDX, OFFSET mensajeCodigoInvalido
     call WriteString
     ret
-ReceiveStockFind:
-    invoke FindProductByCode, ADDR tempCode
+BuscarProductoMercancia:
+    invoke BuscarProductoPorCodigo, ADDR codigoTemporal
     cmp EAX, -1
-    je ReceiveStockMissing
-    mov productIndex, EAX
-    invoke ReadNumber, ADDR msgQuantity, MAX_STOCK
+    je ProductoMercanciaNoEncontrado
+    mov indiceProducto, EAX
+    invoke LeerNumero, ADDR mensajeCantidad, EXISTENCIA_MAXIMA
     cmp EAX, -1
-    je ReceiveStockInvalid
+    je CantidadMercanciaInvalida
     cmp EAX, 1
-    jb ReceiveStockInvalid
-    mov amount, EAX
-    mov EAX, productIndex
-    imul EAX, TYPE Product
-    mov ESI, OFFSET productArray
+    jb CantidadMercanciaInvalida
+    mov cantidad, EAX
+    mov EAX, indiceProducto
+    imul EAX, TYPE Producto
+    mov ESI, OFFSET arregloProductos
     add ESI, EAX
-    mov EAX, [ESI + Product.Quantity]
-    add EAX, amount
-    cmp EAX, MAX_STOCK
-    ja ReceiveStockLimit
-    mov [ESI + Product.Quantity], EAX
-    mov unsavedChanges, 1
-    mov EDX, OFFSET msgStockReceived
+    mov EAX, [ESI + Producto.Existencia]
+    add EAX, cantidad
+    cmp EAX, EXISTENCIA_MAXIMA
+    ja LimiteMercanciaExcedido
+    mov [ESI + Producto.Existencia], EAX
+    mov cambiosSinGuardar, 1
+    mov EDX, OFFSET mensajeMercanciaRecibida
     call WriteString
     ret
-ReceiveStockMissing:
-    mov EDX, OFFSET msgNotFound
+ProductoMercanciaNoEncontrado:
+    mov EDX, OFFSET mensajeNoEncontrado
     call WriteString
     ret
-ReceiveStockInvalid:
-    mov EDX, OFFSET msgInvalidQty
+CantidadMercanciaInvalida:
+    mov EDX, OFFSET mensajeCantidadInvalida
     call WriteString
     ret
-ReceiveStockLimit:
-    mov EDX, OFFSET msgStockLimit
+LimiteMercanciaExcedido:
+    mov EDX, OFFSET mensajeLimiteExistencia
     call WriteString
     ret
-ReceiveStock ENDP
+RecibirMercancia ENDP
 
-SellProduct PROC USES EBX ESI
-    LOCAL productIndex:DWORD, amount:DWORD, saleLow:DWORD, saleHigh:DWORD
-    invoke ReadProductCode, ADDR msgCodeForSale
+VenderProducto PROC USES EBX ESI
+    LOCAL indiceProducto:DWORD, cantidad:DWORD, ventaParteBaja:DWORD, ventaParteAlta:DWORD
+    invoke LeerCodigoProducto, ADDR mensajeCodigoVenta
     cmp AL, 1
-    je SellProductFind
-    mov EDX, OFFSET msgInvalidCode
+    je BuscarProductoVenta
+    mov EDX, OFFSET mensajeCodigoInvalido
     call WriteString
     ret
-SellProductFind:
-    invoke FindProductByCode, ADDR tempCode
+BuscarProductoVenta:
+    invoke BuscarProductoPorCodigo, ADDR codigoTemporal
     cmp EAX, -1
-    je SellProductMissing
-    mov productIndex, EAX
-    invoke ReadNumber, ADDR msgQuantity, MAX_STOCK
+    je ProductoVentaNoEncontrado
+    mov indiceProducto, EAX
+    invoke LeerNumero, ADDR mensajeCantidad, EXISTENCIA_MAXIMA
     cmp EAX, -1
-    je SellProductInvalid
+    je CantidadVentaInvalida
     cmp EAX, 1
-    jb SellProductInvalid
-    mov amount, EAX
-    mov EAX, productIndex
-    imul EAX, TYPE Product
-    mov ESI, OFFSET productArray
+    jb CantidadVentaInvalida
+    mov cantidad, EAX
+    mov EAX, indiceProducto
+    imul EAX, TYPE Producto
+    mov ESI, OFFSET arregloProductos
     add ESI, EAX
-    mov EAX, [ESI + Product.Quantity]
-    cmp EAX, amount
-    jae SellProductCalculate
-    mov EDX, OFFSET msgInsufficient
+    mov EAX, [ESI + Producto.Existencia]
+    cmp EAX, cantidad
+    jae CalcularVenta
+    mov EDX, OFFSET mensajeExistenciaInsuficiente
     call WriteString
     ret
-SellProductCalculate:
-    mov EAX, [ESI + Product.PriceCents]
-    mul amount
-    mov saleLow, EAX
-    mov saleHigh, EDX
-    cmp amount, 5
-    jb SellProductNoDiscount
-    mov EAX, saleLow
-    mov EDX, saleHigh
-    call Divide64By10
-    sub saleLow, EAX
-    sbb saleHigh, EDX
-    mov EDX, OFFSET msgDiscount
+CalcularVenta:
+    mov EAX, [ESI + Producto.PrecioCentavos]
+    mul cantidad
+    mov ventaParteBaja, EAX
+    mov ventaParteAlta, EDX
+    cmp cantidad, 5
+    jb VentaSinDescuento
+    mov EAX, ventaParteBaja
+    mov EDX, ventaParteAlta
+    call Dividir64Entre10
+    sub ventaParteBaja, EAX
+    sbb ventaParteAlta, EDX
+    mov EDX, OFFSET mensajeDescuento
     call WriteString
-    jmp SellProductUpdate
-SellProductNoDiscount:
-    mov EDX, OFFSET msgNoDiscount
+    jmp ActualizarVenta
+VentaSinDescuento:
+    mov EDX, OFFSET mensajeSinDescuento
     call WriteString
-SellProductUpdate:
-    mov EAX, productIndex
-    imul EAX, TYPE Product
-    mov ESI, OFFSET productArray
+ActualizarVenta:
+    mov EAX, indiceProducto
+    imul EAX, TYPE Producto
+    mov ESI, OFFSET arregloProductos
     add ESI, EAX
-    mov EAX, [ESI + Product.Quantity]
-    sub EAX, amount
-    mov [ESI + Product.Quantity], EAX
-    mov unsavedChanges, 1
-    mov EAX, saleLow
-    add DWORD PTR [totalRevenue], EAX
-    mov EAX, saleHigh
-    adc DWORD PTR [totalRevenue+4], EAX
-    mov EDX, OFFSET msgSaleTotal
+    mov EAX, [ESI + Producto.Existencia]
+    sub EAX, cantidad
+    mov [ESI + Producto.Existencia], EAX
+    mov cambiosSinGuardar, 1
+    mov EAX, ventaParteBaja
+    add DWORD PTR [ingresosTotales], EAX
+    mov EAX, ventaParteAlta
+    adc DWORD PTR [ingresosTotales+4], EAX
+    mov EDX, OFFSET mensajeTotalVenta
     call WriteString
-    mov EDX, saleHigh
-    mov EAX, saleLow
-    call WriteCurrency64
+    mov EDX, ventaParteAlta
+    mov EAX, ventaParteBaja
+    call EscribirMoneda64
     call Crlf
     ret
-SellProductMissing:
-    mov EDX, OFFSET msgNotFound
+ProductoVentaNoEncontrado:
+    mov EDX, OFFSET mensajeNoEncontrado
     call WriteString
     ret
-SellProductInvalid:
-    mov EDX, OFFSET msgInvalidQty
+CantidadVentaInvalida:
+    mov EDX, OFFSET mensajeCantidadInvalida
     call WriteString
     ret
-SellProduct ENDP
+VenderProducto ENDP
 
-ShowSummary PROC USES ESI
-    LOCAL totalUnits:DWORD, valueLow:DWORD, valueHigh:DWORD, itemIndex:DWORD
-    mov totalUnits, 0
-    mov valueLow, 0
-    mov valueHigh, 0
-    mov itemIndex, 0
-SummaryLoop:
-    mov EAX, itemIndex
-    cmp EAX, productCount
-    jae SummaryFinished
-    imul EAX, TYPE Product
-    mov ESI, OFFSET productArray
+MostrarResumen PROC USES ESI
+    LOCAL unidadesTotales:DWORD, valorParteBaja:DWORD, valorParteAlta:DWORD, indiceProducto:DWORD
+    mov unidadesTotales, 0
+    mov valorParteBaja, 0
+    mov valorParteAlta, 0
+    mov indiceProducto, 0
+BucleResumen:
+    mov EAX, indiceProducto
+    cmp EAX, cantidadProductos
+    jae FinResumen
+    imul EAX, TYPE Producto
+    mov ESI, OFFSET arregloProductos
     add ESI, EAX
-    mov EAX, [ESI + Product.Quantity]
-    add totalUnits, EAX
-    mul DWORD PTR [ESI + Product.PriceCents]
-    add valueLow, EAX
-    adc valueHigh, EDX
-    inc itemIndex
-    jmp SummaryLoop
+    mov EAX, [ESI + Producto.Existencia]
+    add unidadesTotales, EAX
+    mul DWORD PTR [ESI + Producto.PrecioCentavos]
+    add valorParteBaja, EAX
+    adc valorParteAlta, EDX
+    inc indiceProducto
+    jmp BucleResumen
 
-SummaryFinished:
-    mov EDX, OFFSET msgSummary
+FinResumen:
+    mov EDX, OFFSET mensajeResumen
     call WriteString
-    mov EDX, OFFSET msgProductCount
+    mov EDX, OFFSET mensajeCantidadProductos
     call WriteString
-    mov EAX, productCount
+    mov EAX, cantidadProductos
     xor EDX, EDX
-    call WriteUnsigned64
+    call EscribirEnteroSinSigno64
     call Crlf
-    mov EDX, OFFSET msgUnits
+    mov EDX, OFFSET mensajeUnidades
     call WriteString
-    mov EAX, totalUnits
+    mov EAX, unidadesTotales
     call WriteDec
     call Crlf
-    mov EDX, OFFSET msgValue
+    mov EDX, OFFSET mensajeValorInventario
     call WriteString
-    mov EDX, valueHigh
-    mov EAX, valueLow
-    call WriteCurrency64
+    mov EDX, valorParteAlta
+    mov EAX, valorParteBaja
+    call EscribirMoneda64
     call Crlf
-    mov EDX, OFFSET msgRevenue
+    mov EDX, OFFSET mensajeIngresos
     call WriteString
-    mov EDX, DWORD PTR [totalRevenue+4]
-    mov EAX, DWORD PTR [totalRevenue]
-    call WriteCurrency64
+    mov EDX, DWORD PTR [ingresosTotales+4]
+    mov EAX, DWORD PTR [ingresosTotales]
+    call EscribirMoneda64
     call Crlf
     ret
-ShowSummary ENDP
+MostrarResumen ENDP
 
-StringLength PROC USES ESI, pText:PTR BYTE
-    mov ESI, pText
+LongitudCadena PROC USES ESI, texto:PTR BYTE
+    mov ESI, texto
     xor EAX, EAX
-StringLengthLoop:
+BucleLongitudCadena:
     cmp BYTE PTR [ESI+EAX], 0
-    je StringLengthDone
+    je FinLongitudCadena
     inc EAX
-    jmp StringLengthLoop
-StringLengthDone:
+    jmp BucleLongitudCadena
+FinLongitudCadena:
     ret
-StringLength ENDP
+LongitudCadena ENDP
 
-; Convierte EAX a decimal terminado en cero en numberBuffer.
-FormatUnsigned PROC USES EBX ECX EDX EDI
+; Convierte EAX a decimal terminado en cero en bufferNumero.
+FormatearEnteroSinSigno PROC USES EBX ECX EDX EDI
     mov ECX, 0
     mov EBX, 10
     cmp EAX, 0
-    jne FormatUnsignedLoop
-    mov BYTE PTR reverseDigits[0], '0'
+    jne BucleFormatoEntero
+    mov BYTE PTR digitosInvertidos[0], '0'
     mov ECX, 1
-    jmp FormatUnsignedCopy
-FormatUnsignedLoop:
+    jmp CopiarDigitosFormato
+BucleFormatoEntero:
     xor EDX, EDX
     div EBX
     add DL, '0'
-    mov BYTE PTR reverseDigits[ECX], DL
+    mov BYTE PTR digitosInvertidos[ECX], DL
     inc ECX
     test EAX, EAX
-    jnz FormatUnsignedLoop
-FormatUnsignedCopy:
+    jnz BucleFormatoEntero
+CopiarDigitosFormato:
     mov EDI, 0
     dec ECX
-FormatUnsignedCopyLoop:
-    mov AL, reverseDigits[ECX]
-    mov numberBuffer[EDI], AL
+BucleCopiaDigitos:
+    mov AL, digitosInvertidos[ECX]
+    mov bufferNumero[EDI], AL
     inc EDI
     dec ECX
-    jns FormatUnsignedCopyLoop
-    mov BYTE PTR numberBuffer[EDI], 0
+    jns BucleCopiaDigitos
+    mov BYTE PTR bufferNumero[EDI], 0
     mov EAX, EDI
     ret
-FormatUnsigned ENDP
+FormatearEnteroSinSigno ENDP
 
-WriteBytes PROC USES ECX EDX, pBytes:PTR BYTE, byteCount:DWORD
-    LOCAL expectedBytes:DWORD
-    cmp ioError, 0
-    jne WriteBytesDone
-    mov EAX, byteCount
-    mov expectedBytes, EAX
-    mov EAX, fileHandle
-    mov EDX, pBytes
-    mov ECX, expectedBytes
+EscribirBytes PROC USES ECX EDX, bytes:PTR BYTE, cantidadBytes:DWORD
+    LOCAL bytesEsperados:DWORD
+    cmp errorEntradaSalida, 0
+    jne FinEscrituraBytes
+    mov EAX, cantidadBytes
+    mov bytesEsperados, EAX
+    mov EAX, identificadorArchivo
+    mov EDX, bytes
+    mov ECX, bytesEsperados
     call WriteToFile
-    cmp EAX, expectedBytes
-    je WriteBytesDone
-    mov ioError, 1
-WriteBytesDone:
+    cmp EAX, bytesEsperados
+    je FinEscrituraBytes
+    mov errorEntradaSalida, 1
+FinEscrituraBytes:
     ret
-WriteBytes ENDP
+EscribirBytes ENDP
 
-SaveCatalog PROC USES ESI
-    LOCAL itemIndex:DWORD, itemAddress:DWORD, textLength:DWORD
-    mov saveSucceeded, 0
-    mov usingFallback, 0
-    mov EDX, OFFSET inventoryFile
+GuardarCatalogo PROC USES ESI
+    LOCAL indiceProducto:DWORD, direccionProducto:DWORD, longitudTexto:DWORD
+    mov guardadoExitoso, 0
+    mov usaRespaldo, 0
+    mov EDX, OFFSET rutaInventario
     call CreateOutputFile
     cmp EAX, -1
-    jne SaveCatalogOpened
-    mov usingFallback, 1
-    mov EDX, OFFSET fallbackFile
+    jne ArchivoGuardadoAbierto
+    mov usaRespaldo, 1
+    mov EDX, OFFSET rutaRespaldo
     call CreateOutputFile
     cmp EAX, -1
-    je SaveCatalogError
-SaveCatalogOpened:
-    mov fileHandle, EAX
-    mov ioError, 0
-    mov itemIndex, 0
+    je ErrorGuardarCatalogo
+ArchivoGuardadoAbierto:
+    mov identificadorArchivo, EAX
+    mov errorEntradaSalida, 0
+    mov indiceProducto, 0
 
-SaveCatalogLoop:
-    mov EAX, itemIndex
-    cmp EAX, productCount
-    jae SaveCatalogClose
-    imul EAX, TYPE Product
-    mov ESI, OFFSET productArray
+BucleGuardarCatalogo:
+    mov EAX, indiceProducto
+    cmp EAX, cantidadProductos
+    jae CerrarCatalogoGuardado
+    imul EAX, TYPE Producto
+    mov ESI, OFFSET arregloProductos
     add ESI, EAX
-    mov itemAddress, ESI
-    invoke WriteBytes, ESI, 7
-    invoke WriteBytes, ADDR separator, 1
-    lea EAX, [ESI + Product.ProdName]
-    invoke StringLength, EAX
-    mov textLength, EAX
-    mov EAX, itemAddress
-    lea EAX, [EAX + Product.ProdName]
-    invoke WriteBytes, EAX, textLength
-    invoke WriteBytes, ADDR separator, 1
+    mov direccionProducto, ESI
+    invoke EscribirBytes, ESI, 7
+    invoke EscribirBytes, ADDR separador, 1
+    lea EAX, [ESI + Producto.Nombre]
+    invoke LongitudCadena, EAX
+    mov longitudTexto, EAX
+    mov EAX, direccionProducto
+    lea EAX, [EAX + Producto.Nombre]
+    invoke EscribirBytes, EAX, longitudTexto
+    invoke EscribirBytes, ADDR separador, 1
 
-    mov EAX, itemAddress
-    mov EAX, [EAX + Product.PriceCents]
-    invoke FormatUnsigned
-    invoke WriteBytes, ADDR numberBuffer, EAX
-    invoke WriteBytes, ADDR separator, 1
+    mov EAX, direccionProducto
+    mov EAX, [EAX + Producto.PrecioCentavos]
+    invoke FormatearEnteroSinSigno
+    invoke EscribirBytes, ADDR bufferNumero, EAX
+    invoke EscribirBytes, ADDR separador, 1
 
-    mov EAX, itemAddress
-    mov EAX, [EAX + Product.Quantity]
-    invoke FormatUnsigned
-    invoke WriteBytes, ADDR numberBuffer, EAX
-    invoke WriteBytes, ADDR lineBreak, SIZEOF lineBreak
-    inc itemIndex
-    jmp SaveCatalogLoop
+    mov EAX, direccionProducto
+    mov EAX, [EAX + Producto.Existencia]
+    invoke FormatearEnteroSinSigno
+    invoke EscribirBytes, ADDR bufferNumero, EAX
+    invoke EscribirBytes, ADDR saltoLinea, SIZEOF saltoLinea
+    inc indiceProducto
+    jmp BucleGuardarCatalogo
 
-SaveCatalogClose:
-    mov EAX, fileHandle
+CerrarCatalogoGuardado:
+    mov EAX, identificadorArchivo
     call CloseFile
-    cmp ioError, 0
-    jne SaveCatalogError
-    mov saveSucceeded, 1
-    mov unsavedChanges, 0
-    mov EDX, OFFSET msgSaved
+    cmp errorEntradaSalida, 0
+    jne ErrorGuardarCatalogo
+    mov guardadoExitoso, 1
+    mov cambiosSinGuardar, 0
+    mov EDX, OFFSET mensajeGuardado
     call WriteString
     ret
-SaveCatalogError:
-    mov EDX, OFFSET msgFileError
+ErrorGuardarCatalogo:
+    mov EDX, OFFSET mensajeErrorArchivo
     call WriteString
     ret
-SaveCatalog ENDP
+GuardarCatalogo ENDP
 
-LoadCatalog PROC USES ESI EDI EBX
-    LOCAL lineStart:DWORD, nextLine:DWORD, fieldStart:DWORD
-    LOCAL itemAddress:DWORD, fieldLength:DWORD, loadedPrice:DWORD, loadedQuantity:DWORD
-    LOCAL duplicateIndex:DWORD
+CargarCatalogo PROC USES ESI EDI EBX
+    LOCAL inicioLinea:DWORD, siguienteLinea:DWORD, inicioCampo:DWORD
+    LOCAL direccionProducto:DWORD, longitudCampo:DWORD, precioCargado:DWORD, existenciaCargada:DWORD
+    LOCAL indiceDuplicado:DWORD
 
-    mov loadSucceeded, 0
-    mov EDX, OFFSET inventoryFile
+    mov cargaExitosa, 0
+    mov EDX, OFFSET rutaInventario
     call OpenInputFile
     cmp EAX, -1
-    jne LoadCatalogOpened
-    mov EDX, OFFSET fallbackFile
+    jne ArchivoCargadoAbierto
+    mov EDX, OFFSET rutaRespaldo
     call OpenInputFile
     cmp EAX, -1
-    je LoadCatalogError
-LoadCatalogOpened:
-    mov fileHandle, EAX
-    mov EAX, fileHandle
-    mov EDX, OFFSET fileBuffer
-    mov ECX, FILE_BUFFER_SIZE-1
+    je ErrorCargarCatalogo
+ArchivoCargadoAbierto:
+    mov identificadorArchivo, EAX
+    mov EAX, identificadorArchivo
+    mov EDX, OFFSET bufferArchivo
+    mov ECX, TAMANO_BUFFER_ARCHIVO-1
     call ReadFromFile
-    jc LoadCatalogReadError
-    cmp EAX, FILE_BUFFER_SIZE-1
-    jae LoadCatalogReadError
-    mov fileBytes, EAX
-    mov BYTE PTR fileBuffer[EAX], 0
-    mov stageCount, 0
-    mov ESI, OFFSET fileBuffer
+    jc ErrorLecturaCatalogo
+    cmp EAX, TAMANO_BUFFER_ARCHIVO-1
+    jae ErrorLecturaCatalogo
+    mov bytesArchivo, EAX
+    mov BYTE PTR bufferArchivo[EAX], 0
+    mov cantidadTemporal, 0
+    mov ESI, OFFSET bufferArchivo
 
-LoadCatalogNextLine:
+SiguienteLineaCatalogo:
     cmp BYTE PTR [ESI], 0
-    je LoadCatalogCommit
+    je ConfirmarCargaCatalogo
     cmp BYTE PTR [ESI], 13
-    je LoadCatalogSkipBreak
+    je OmitirSaltoLinea
     cmp BYTE PTR [ESI], 10
-    je LoadCatalogSkipBreak
-    mov lineStart, ESI
+    je OmitirSaltoLinea
+    mov inicioLinea, ESI
     mov EBX, ESI
-LoadCatalogFindLineEnd:
+BuscarFinLinea:
     cmp BYTE PTR [EBX], 0
-    je LoadCatalogLineEndFound
+    je FinLineaEncontrado
     cmp BYTE PTR [EBX], 13
-    je LoadCatalogLineEndFound
+    je FinLineaEncontrado
     cmp BYTE PTR [EBX], 10
-    je LoadCatalogLineEndFound
+    je FinLineaEncontrado
     inc EBX
-    jmp LoadCatalogFindLineEnd
-LoadCatalogLineEndFound:
+    jmp BuscarFinLinea
+FinLineaEncontrado:
     cmp BYTE PTR [EBX], 0
-    je LoadCatalogLastLine
+    je UltimaLineaCatalogo
     mov EAX, EBX
     inc EAX
     cmp BYTE PTR [EBX], 13
-    jne LoadCatalogCheckLF
+    jne VerificarSaltoLinea
     cmp BYTE PTR [EAX], 10
-    jne LoadCatalogSaveNext
+    jne GuardarSiguienteLinea
     inc EAX
-    jmp LoadCatalogSaveNext
-LoadCatalogCheckLF:
+    jmp GuardarSiguienteLinea
+VerificarSaltoLinea:
     cmp BYTE PTR [EBX], 10
-    jne LoadCatalogSaveNext
-LoadCatalogSaveNext:
-    mov nextLine, EAX
+    jne GuardarSiguienteLinea
+GuardarSiguienteLinea:
+    mov siguienteLinea, EAX
     mov BYTE PTR [EBX], 0
-    jmp LoadCatalogParseLine
-LoadCatalogLastLine:
-    mov nextLine, EBX
+    jmp AnalizarLineaCatalogo
+UltimaLineaCatalogo:
+    mov siguienteLinea, EBX
     mov BYTE PTR [EBX], 0
-LoadCatalogParseLine:
-    cmp stageCount, MAX_PRODUCTS
-    jae LoadCatalogInvalid
+AnalizarLineaCatalogo:
+    cmp cantidadTemporal, MAX_PRODUCTOS
+    jae CatalogoInvalido
 
-    mov ESI, lineStart
-    mov fieldStart, ESI
-LoadCatalogCodeEnd:
+    mov ESI, inicioLinea
+    mov inicioCampo, ESI
+FinCampoCodigo:
     cmp BYTE PTR [ESI], '|'
-    je LoadCatalogCodeFound
+    je CodigoEncontrado
     cmp BYTE PTR [ESI], 0
-    je LoadCatalogInvalid
+    je CatalogoInvalido
     inc ESI
-    jmp LoadCatalogCodeEnd
-LoadCatalogCodeFound:
+    jmp FinCampoCodigo
+CodigoEncontrado:
     mov EAX, ESI
-    sub EAX, fieldStart
+    sub EAX, inicioCampo
     cmp EAX, 7
-    jne LoadCatalogInvalid
+    jne CatalogoInvalido
     mov BYTE PTR [ESI], 0
-    mov EDX, fieldStart
-    call IsValidCode
+    mov EDX, inicioCampo
+    call EsCodigoValido
     cmp AL, 1
-    jne LoadCatalogInvalid
-    mov duplicateIndex, 0
-LoadCatalogCheckDuplicate:
-    mov EAX, duplicateIndex
-    cmp EAX, stageCount
-    jae LoadCatalogCodeUnique
-    imul EAX, TYPE Product
-    mov EDI, OFFSET stagingArray
+    jne CatalogoInvalido
+    mov indiceDuplicado, 0
+VerificarCodigoDuplicado:
+    mov EAX, indiceDuplicado
+    cmp EAX, cantidadTemporal
+    jae CodigoUnico
+    imul EAX, TYPE Producto
+    mov EDI, OFFSET arregloTemporal
     add EDI, EAX
-    lea EDI, [EDI + Product.Code]
-    mov EBX, fieldStart
-    mov ECX, MAX_CODE_LEN
-LoadCatalogCompareDuplicate:
+    lea EDI, [EDI + Producto.Codigo]
+    mov EBX, inicioCampo
+    mov ECX, LONGITUD_MAX_CODIGO
+CompararCodigoDuplicado:
     mov AL, [EBX]
     mov DL, [EDI]
     cmp AL, DL
-    jne LoadCatalogNextDuplicate
+    jne SiguienteDuplicado
     inc EBX
     inc EDI
-    loop LoadCatalogCompareDuplicate
-    jmp LoadCatalogInvalid
-LoadCatalogNextDuplicate:
-    inc duplicateIndex
-    jmp LoadCatalogCheckDuplicate
-LoadCatalogCodeUnique:
+    loop CompararCodigoDuplicado
+    jmp CatalogoInvalido
+SiguienteDuplicado:
+    inc indiceDuplicado
+    jmp VerificarCodigoDuplicado
+CodigoUnico:
     inc ESI
-    mov EAX, stageCount
-    imul EAX, TYPE Product
-    mov EDI, OFFSET stagingArray
+    mov EAX, cantidadTemporal
+    imul EAX, TYPE Producto
+    mov EDI, OFFSET arregloTemporal
     add EDI, EAX
-    mov itemAddress, EDI
-    mov EBX, fieldStart
-    mov ECX, MAX_CODE_LEN
-LoadCatalogCopyCode:
+    mov direccionProducto, EDI
+    mov EBX, inicioCampo
+    mov ECX, LONGITUD_MAX_CODIGO
+CopiarCodigo:
     mov AL, [EBX]
     mov [EDI], AL
     inc EBX
     inc EDI
-    loop LoadCatalogCopyCode
+    loop CopiarCodigo
 
-    mov fieldStart, ESI
-LoadCatalogNameEnd:
+    mov inicioCampo, ESI
+FinCampoNombre:
     cmp BYTE PTR [ESI], '|'
-    je LoadCatalogNameFound
+    je NombreEncontrado
     cmp BYTE PTR [ESI], 0
-    je LoadCatalogInvalid
+    je CatalogoInvalido
     inc ESI
-    jmp LoadCatalogNameEnd
-LoadCatalogNameFound:
+    jmp FinCampoNombre
+NombreEncontrado:
     mov BYTE PTR [ESI], 0
     mov EAX, ESI
-    sub EAX, fieldStart
+    sub EAX, inicioCampo
     cmp EAX, 1
-    jb LoadCatalogInvalid
-    cmp EAX, MAX_NAME_LEN
-    ja LoadCatalogInvalid
-    mov fieldLength, EAX
+    jb CatalogoInvalido
+    cmp EAX, LONGITUD_MAX_NOMBRE
+    ja CatalogoInvalido
+    mov longitudCampo, EAX
     inc ESI
-    mov EDI, itemAddress
-    add EDI, Product.ProdName
-    mov EBX, fieldStart
-    mov ECX, fieldLength
-LoadCatalogCopyName:
+    mov EDI, direccionProducto
+    add EDI, Producto.Nombre
+    mov EBX, inicioCampo
+    mov ECX, longitudCampo
+CopiarNombre:
     mov AL, [EBX]
     mov [EDI], AL
     inc EBX
     inc EDI
-    loop LoadCatalogCopyName
+    loop CopiarNombre
     mov BYTE PTR [EDI], 0
 
-    mov fieldStart, ESI
-LoadCatalogPriceEnd:
+    mov inicioCampo, ESI
+FinCampoPrecio:
     cmp BYTE PTR [ESI], '|'
-    je LoadCatalogPriceFound
+    je PrecioEncontrado
     cmp BYTE PTR [ESI], 0
-    je LoadCatalogInvalid
+    je CatalogoInvalido
     inc ESI
-    jmp LoadCatalogPriceEnd
-LoadCatalogPriceFound:
+    jmp FinCampoPrecio
+PrecioEncontrado:
     mov BYTE PTR [ESI], 0
-    invoke ParseUnsigned, fieldStart, -1
+    invoke ConvertirEnteroSinSigno, inicioCampo, -1
     test EDX, EDX
-    jz LoadCatalogInvalid
+    jz CatalogoInvalido
     cmp EAX, 0
-    je LoadCatalogInvalid
-    mov loadedPrice, EAX
+    je CatalogoInvalido
+    mov precioCargado, EAX
     inc ESI
 
-    mov fieldStart, ESI
-    invoke ParseUnsigned, fieldStart, MAX_STOCK
+    mov inicioCampo, ESI
+    invoke ConvertirEnteroSinSigno, inicioCampo, EXISTENCIA_MAXIMA
     test EDX, EDX
-    jz LoadCatalogInvalid
-    mov loadedQuantity, EAX
-    mov EDI, itemAddress
-    mov EAX, loadedPrice
-    mov [EDI + Product.PriceCents], EAX
-    mov EAX, loadedQuantity
-    mov [EDI + Product.Quantity], EAX
-    inc stageCount
-    mov ESI, nextLine
-    jmp LoadCatalogNextLine
+    jz CatalogoInvalido
+    mov existenciaCargada, EAX
+    mov EDI, direccionProducto
+    mov EAX, precioCargado
+    mov [EDI + Producto.PrecioCentavos], EAX
+    mov EAX, existenciaCargada
+    mov [EDI + Producto.Existencia], EAX
+    inc cantidadTemporal
+    mov ESI, siguienteLinea
+    jmp SiguienteLineaCatalogo
 
-LoadCatalogSkipBreak:
+OmitirSaltoLinea:
     inc ESI
-    jmp LoadCatalogNextLine
+    jmp SiguienteLineaCatalogo
 
-LoadCatalogCommit:
-    mov EAX, stageCount
-    mov productCount, EAX
-    mov unsavedChanges, 0
-    mov loadSucceeded, 1
-    imul EAX, TYPE Product
+ConfirmarCargaCatalogo:
+    mov EAX, cantidadTemporal
+    mov cantidadProductos, EAX
+    mov cambiosSinGuardar, 0
+    mov cargaExitosa, 1
+    imul EAX, TYPE Producto
     mov ECX, EAX
-    mov ESI, OFFSET stagingArray
-    mov EDI, OFFSET productArray
+    mov ESI, OFFSET arregloTemporal
+    mov EDI, OFFSET arregloProductos
     cld
     rep movsb
-    mov EAX, fileHandle
+    mov EAX, identificadorArchivo
     call CloseFile
-    mov EDX, OFFSET msgLoadedCount
+    mov EDX, OFFSET mensajeCantidadCargada
     call WriteString
-    mov EAX, productCount
+    mov EAX, cantidadProductos
     call WriteDec
     call Crlf
-    mov EDX, OFFSET msgLoaded
+    mov EDX, OFFSET mensajeCargado
     call WriteString
     ret
 
-LoadCatalogReadError:
-    mov EAX, fileHandle
+ErrorLecturaCatalogo:
+    mov EAX, identificadorArchivo
     call CloseFile
-LoadCatalogError:
-    mov EDX, OFFSET msgFileFormat
+ErrorCargarCatalogo:
+    mov EDX, OFFSET mensajeFormatoArchivo
     call WriteString
     ret
-LoadCatalogInvalid:
-    mov EAX, fileHandle
+CatalogoInvalido:
+    mov EAX, identificadorArchivo
     call CloseFile
-    mov EDX, OFFSET msgFileFormat
+    mov EDX, OFFSET mensajeFormatoArchivo
     call WriteString
     ret
-LoadCatalog ENDP
+CargarCatalogo ENDP
 
 ;===========================================================
 ; Programa principal.
 ;===========================================================
-main PROC
-    call InitDemoInventory
-    call LoadCatalog
+principal PROC
+    call CargarCatalogo
 
-MenuLoop:
-    call DisplayMenu
-    cmp BYTE PTR menuChoice[1], 0
-    jne InvalidMenuChoice
-    mov AL, menuChoice
+BucleMenu:
+    call MostrarMenu
+    cmp BYTE PTR opcionMenu[1], 0
+    jne OpcionMenuInvalida
+    mov AL, opcionMenu
     cmp AL, '0'
-    je ExitProgram
+    je SalirPrograma
     cmp AL, '1'
-    je MenuAddProduct
+    je OpcionRegistrarProducto
     cmp AL, '2'
-    je MenuShowInventory
+    je OpcionMostrarInventario
     cmp AL, '3'
-    je MenuSearchProduct
+    je OpcionBuscarProducto
     cmp AL, '4'
-    je MenuReceiveStock
+    je OpcionRecibirMercancia
     cmp AL, '5'
-    je MenuSellProduct
+    je OpcionVenderProducto
     cmp AL, '6'
-    je MenuShowSummary
+    je OpcionMostrarResumen
     cmp AL, '7'
-    je MenuSaveCatalog
+    je OpcionGuardarCatalogo
     cmp AL, '8'
-    je MenuLoadCatalog
+    je OpcionCargarCatalogo
     cmp AL, '9'
-    je MenuShowRule
+    je OpcionMostrarRegla
 
-InvalidMenuChoice:
-    mov EDX, OFFSET msgInvalid
+OpcionMenuInvalida:
+    mov EDX, OFFSET mensajeInvalido
     call WriteString
-    jmp MenuLoop
+    jmp BucleMenu
 
-MenuAddProduct:
-    call AddProduct
-    jmp MenuLoop
-MenuShowInventory:
-    call ShowInventory
-    jmp MenuLoop
-MenuSearchProduct:
-    call SearchProduct
-    jmp MenuLoop
-MenuReceiveStock:
-    call ReceiveStock
-    jmp MenuLoop
-MenuSellProduct:
-    call SellProduct
-    jmp MenuLoop
-MenuShowSummary:
-    call ShowSummary
-    jmp MenuLoop
-MenuSaveCatalog:
-    call SaveCatalog
-    jmp MenuLoop
-MenuLoadCatalog:
-    call LoadCatalog
-    jmp MenuLoop
-MenuShowRule:
-    mov EDX, OFFSET msgRule
+OpcionRegistrarProducto:
+    call RegistrarProducto
+    jmp BucleMenu
+OpcionMostrarInventario:
+    call MostrarInventario
+    jmp BucleMenu
+OpcionBuscarProducto:
+    call BuscarProducto
+    jmp BucleMenu
+OpcionRecibirMercancia:
+    call RecibirMercancia
+    jmp BucleMenu
+OpcionVenderProducto:
+    call VenderProducto
+    jmp BucleMenu
+OpcionMostrarResumen:
+    call MostrarResumen
+    jmp BucleMenu
+OpcionGuardarCatalogo:
+    call GuardarCatalogo
+    jmp BucleMenu
+OpcionCargarCatalogo:
+    call CargarCatalogo
+    jmp BucleMenu
+OpcionMostrarRegla:
+    mov EDX, OFFSET mensajeRegla
     call WriteString
-    jmp MenuLoop
+    jmp BucleMenu
 
-ExitProgram:
-    cmp unsavedChanges, 0
-    je ExitWithoutWarning
-    mov EDX, OFFSET msgUnsaved
+SalirPrograma:
+    cmp cambiosSinGuardar, 0
+    je SalirSinAdvertencia
+    mov EDX, OFFSET mensajeCambiosSinGuardar
     call WriteString
-    mov EDX, OFFSET menuChoice
-    mov ECX, SIZEOF menuChoice
+    mov EDX, OFFSET opcionMenu
+    mov ECX, SIZEOF opcionMenu
     call ReadString
-    cmp BYTE PTR menuChoice[1], 0
-    jne ExitInvalidResponse
-    mov AL, menuChoice
+    cmp BYTE PTR opcionMenu[1], 0
+    jne RespuestaSalidaInvalida
+    mov AL, opcionMenu
     cmp AL, 'S'
-    je ExitSaveChanges
+    je GuardarCambiosSalida
     cmp AL, 's'
-    je ExitSaveChanges
+    je GuardarCambiosSalida
     cmp AL, 'N'
-    je ExitWithoutWarning
+    je SalirSinAdvertencia
     cmp AL, 'n'
-    je ExitWithoutWarning
-ExitInvalidResponse:
-    mov EDX, OFFSET msgInvalid
+    je SalirSinAdvertencia
+RespuestaSalidaInvalida:
+    mov EDX, OFFSET mensajeInvalido
     call WriteString
-    jmp MenuLoop
-ExitSaveChanges:
-    call SaveCatalog
-    cmp saveSucceeded, 1
-    jne ExitSaveFailed
-    jmp ExitWithoutWarning
-ExitSaveFailed:
-    mov EDX, OFFSET msgSaveCancelled
+    jmp BucleMenu
+GuardarCambiosSalida:
+    call GuardarCatalogo
+    cmp guardadoExitoso, 1
+    jne FalloGuardadoSalida
+    jmp SalirSinAdvertencia
+FalloGuardadoSalida:
+    mov EDX, OFFSET mensajeGuardadoCancelado
     call WriteString
-    jmp MenuLoop
-ExitWithoutWarning:
-    mov EDX, OFFSET msgExit
+    jmp BucleMenu
+SalirSinAdvertencia:
+    mov EDX, OFFSET mensajeSalida
     call WriteString
     exit
-main ENDP
+principal ENDP
 
-END main
+END principal

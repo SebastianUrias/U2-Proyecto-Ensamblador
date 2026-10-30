@@ -1,7 +1,7 @@
 # Tabla de pruebas
 
 | Caso | Entrada | Resultado esperado | Resultado obtenido |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Alta valida | `JKL-012`, `Goma`, `12.50`, `8` | Producto aceptado | Pendiente de ejecutar en MASM |
 | Alta duplicada | `ABC-123` | Rechazo por código duplicado | Pendiente de ejecutar en MASM |
 | Código inválido | `AB-12` | Rechazo con mensaje de validación | Pendiente de ejecutar en MASM |
