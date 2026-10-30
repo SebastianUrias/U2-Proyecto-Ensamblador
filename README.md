@@ -1,5 +1,4 @@
 # Proyecto Unidad 2 - Papelería del Valle
-
 Sistema de consola para administrar productos e inventario de una papelería. La entrega principal es el programa en ensamblador MASM x86 con Irvine32; el código Python y sus pruebas son auxiliares para revisar reglas de negocio, no reemplazan el programa ASM.
 
 ## Funciones del programa ASM
@@ -29,10 +28,3 @@ ABC-123|Cuaderno profesional|25000|30
 ```
 
 El programa guarda y carga este formato delimitado. Los nombres no pueden contener `|`. Primero intenta usar `data\inventario_papeleria.dat`; si esa ruta no se abre desde el directorio de trabajo, usa `inventario_papeleria.dat` en el directorio actual. Al salir con cambios pendientes, solicita confirmación y ofrece guardarlos; si el guardado falla, mantiene el programa abierto.
-
-## Verificación auxiliar Python
-La versión Python no es la aplicación entregable; se puede usar opcionalmente para revisar la lógica en un equipo con Python:
-
-```powershell
-python -m unittest discover -s tests -v
-```
