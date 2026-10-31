@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Código fuente">
+      <UniqueIdentifier>{AA9CB39E-E814-48B2-8A04-DA0F2BAA0E06}</UniqueIdentifier>
+      <Extensions>asm</Extensions>
+    </Filter>
+    <Filter Include="Datos">
+      <UniqueIdentifier>{F6F0CC39-A5B8-43C8-B44A-7B6DDC1C3C10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Documentación">
+      <UniqueIdentifier>{51CE0EB3-0C74-40B7-9078-81F47B404D85}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="src\Papeleria.asm">
+      <Filter>Código fuente</Filter>
+    </MASM>
+    <None Include="data\inventario_papeleria.dat">
+      <Filter>Datos</Filter>
+    </None>
+    <None Include="docs\informe.md">
+      <Filter>Documentación</Filter>
+    </None>
+    <None Include="docs\tabla_pruebas.md">
+      <Filter>Documentación</Filter>
+    </None>
+    <None Include="U2_PROYECTO_ENSAMBLADOR.pdf">
+      <Filter>Documentación</Filter>
+    </None>
+    <None Include="README.md">
+      <Filter>Documentación</Filter>
+    </None>
+  </ItemGroup>
+</Project>

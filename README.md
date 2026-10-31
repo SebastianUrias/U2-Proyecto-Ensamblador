@@ -13,15 +13,23 @@ Sistema de consola para administrar productos e inventario de una papelería. La
 
 ## Archivos
 
+- `Papeleria.sln` y `Papeleria.vcxproj`: solución Win32 para Visual Studio 2022 con MASM.
 - `src\Papeleria.asm`: aplicación principal MASM x86.
 - `data\inventario_papeleria.dat`: catálogo de ejemplo y archivo de persistencia del ASM.
 - `docs\informe.md` y `docs\tabla_pruebas.md`: documentación y casos de prueba.
 
 ## Compilar y ejecutar
 
-Se requiere MASM de 32 bits, la biblioteca Irvine32 y la configuración de enlazado indicada por el curso. Agrega `src\Papeleria.asm` al proyecto MASM de Visual Studio, verifica que `Irvine32.inc` e `Irvine32.lib` estén configurados, y compila como aplicación Win32.
+Se requiere Visual Studio 2022 con la carga de trabajo **Desarrollo para el escritorio con C++** (incluye las herramientas de MASM) y la biblioteca Irvine32 de 32 bits.
 
-Al iniciar, el programa intenta cargar el catálogo guardado; si no encuentra un archivo válido, comienza con el catálogo vacío. Ejecuta el programa con el directorio de trabajo en la raíz del repositorio para que utilice `data\inventario_papeleria.dat`. Si Visual Studio usa otro directorio de trabajo, configura la raíz del repositorio en las propiedades de depuración; de lo contrario, el programa puede usar su archivo de respaldo `inventario_papeleria.dat` en el directorio actual. Cada guardado escribe un solo archivo y muestra un solo mensaje de confirmación. Las opciones del menú aceptan una línea y requieren Enter; no se necesita una tecla adicional después de mostrar el resultado.
+1. Instala Irvine32 y asegúrate de que `Irvine32.inc` e `Irvine32.lib` estén en la misma carpeta. El proyecto usa `C:\Irvine` como ruta predeterminada.
+2. Si Irvine32 está en otra carpeta, define la variable de entorno `IRVINE32_DIR` con esa ruta antes de abrir Visual Studio.
+3. Abre `Papeleria.sln`, selecciona la plataforma `Win32` y compila la solución.
+4. Ejecuta el proyecto desde Visual Studio. El directorio de trabajo está configurado en la raíz del proyecto para que encuentre `data\inventario_papeleria.dat`.
+
+Los ejecutables y archivos intermedios se generan en `build\Win32\Debug` o `build\Win32\Release`.
+
+Al iniciar, el programa intenta cargar el catálogo guardado; si no encuentra un archivo válido, comienza con el catálogo vacío. Cada guardado escribe un solo archivo y muestra un solo mensaje de confirmación. Las opciones del menú aceptan una línea y requieren Enter; no se necesita una tecla adicional después de mostrar el resultado.
 
 ## Formato del catálogo ASM
 

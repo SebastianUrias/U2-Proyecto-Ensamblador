@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{BC8A1FFA-BEE3-4634-801F-F334798102B3}") = "Papeleria", "Papeleria.vcxproj", "{5AB660C5-03E5-4A4D-992E-AC83D222BC37}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5AB660C5-03E5-4A4D-992E-AC83D222BC37}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5AB660C5-03E5-4A4D-992E-AC83D222BC37}.Debug|Win32.Build.0 = Debug|Win32
+		{5AB660C5-03E5-4A4D-992E-AC83D222BC37}.Release|Win32.ActiveCfg = Release|Win32
+		{5AB660C5-03E5-4A4D-992E-AC83D222BC37}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
