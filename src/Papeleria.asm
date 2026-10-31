@@ -1,8 +1,8 @@
-﻿;===========================================================
-; Proyecto: Sistema de ventas e inventario para papelería
+;===========================================================
+; Proyecto: Sistema de ventas e inventario para papeleria
 ; Curso: Lenguajes de Interfaz - Unidad 2
-; Descripción: base de código MASM x86 con registro de inventario,
-; ventas y menú de control para una papelería.
+; Descripcion: base de codigo MASM x86 con registro de inventario,
+; ventas y menu de control para una papeleria.
 ;===========================================================
 
 INCLUDE Irvine32.inc
@@ -100,9 +100,9 @@ Producto ENDS
     mensajeGuardadoCancelado BYTE "No se pudo guardar. El programa seguira abierto.", 13, 10, 0
 .code
 
-; Documentación: Entrada, salida y registros modificados se indican en cada
-; procedimiento. MASM genera prólogos/epílogos para USES y LOCAL; INVOKE
-; prepara las llamadas con parámetros y no hay PUSH/POP manuales.
+; Documentacion: Entrada, salida y registros modificados se indican en cada
+; procedimiento. MASM genera prologos/epilogos para USES y LOCAL; INVOKE
+; prepara las llamadas con parametros y no hay PUSH/POP manuales.
 ;===========================================================
 ; Valida el formato ABC-123.
 ; Entrada: EDX = puntero a la cadena.
@@ -273,9 +273,9 @@ PrecioInvalido:
 ConvertirPrecioACentavos ENDP
 
 ;===========================================================
-; Busca un producto por su código.
-; Entrada: codigo = puntero a código terminado en cero.
-; Salida: EAX = índice encontrado o -1.
+; Busca un producto por su codigo.
+; Entrada: codigo = puntero a codigo terminado en cero.
+; Salida: EAX = indice encontrado o -1.
 ; Registros modificados: EAX, EFLAGS; ESI, EDI, EBX y ECX se preservan.
 ;===========================================================
 BuscarProductoPorCodigo PROC USES ESI EDI EBX ECX, codigo:PTR BYTE
@@ -325,9 +325,9 @@ NoEncontrado:
 BuscarProductoPorCodigo ENDP
 
 ;===========================================================
-; Muestra el menú principal.
+; Muestra el menu principal.
 ; Entrada: ninguna.
-; Salida: opcionMenu contiene la selección; EAX = longitud leída.
+; Salida: opcionMenu contiene la seleccion; EAX = longitud leida.
 ; Registros modificados: EAX, ECX, EDX, EFLAGS.
 ;===========================================================
 MostrarMenu PROC
@@ -365,7 +365,7 @@ MostrarMenu ENDP
 
 ; Lee una linea y devuelve su longitud en EAX.
 ; Entrada: pregunta, buffer y longitudMaxima en la pila.
-; Salida: EAX = longitud leída; buffer contiene el texto.
+; Salida: EAX = longitud leida; buffer contiene el texto.
 ; Registros modificados: EAX, EFLAGS; EDX y ECX se preservan.
 LeerEntrada PROC USES EDX ECX, pregunta:PTR BYTE, buffer:PTR BYTE, longitudMaxima:DWORD
     mov EDX, pregunta
@@ -379,7 +379,7 @@ LeerEntrada ENDP
 ; Convierte una cadena de digitos a DWORD.
 ; EDX=1 indica exito; EDX=0 indica entrada invalida.
 ; Entrada: texto y valorMaximo en la pila.
-; Salida: EAX = valor; EDX = estado de validación.
+; Salida: EAX = valor; EDX = estado de validacion.
 ; Registros modificados: EAX, EDX, EFLAGS; EBX, ECX y ESI se preservan.
 ConvertirEnteroSinSigno PROC USES EBX ECX ESI, texto:PTR BYTE, valorMaximo:DWORD
     LOCAL valor:DWORD, digito:DWORD, cantidadDigitos:DWORD
@@ -426,7 +426,7 @@ EnteroInvalido:
 ConvertirEnteroSinSigno ENDP
 
 ; Entrada: pregunta y valorMaximo en la pila.
-; Salida: EAX = número válido o -1 si la entrada no cumple.
+; Salida: EAX = numero valido o -1 si la entrada no cumple.
 ; Registros modificados: EAX, EDX, EFLAGS.
 LeerNumero PROC, pregunta:PTR BYTE, valorMaximo:DWORD
     invoke LeerEntrada, pregunta, ADDR bufferEntrada, SIZEOF bufferEntrada-1
@@ -467,8 +467,8 @@ Dividir64Entre10 PROC USES EBX
 Dividir64Entre10 ENDP
 
 ; Imprime como decimal sin signo el valor de 64 bits en EDX:EAX.
-; Entrada: número sin signo en EDX:EAX.
-; Salida: escribe sus dígitos mediante WriteString.
+; Entrada: numero sin signo en EDX:EAX.
+; Salida: escribe sus digitos mediante WriteString.
 ; Registros modificados: EAX, EDX, EFLAGS; EBX, ECX, ESI y EDI se preservan.
 EscribirEnteroSinSigno64 PROC USES EBX ECX ESI EDI
     LOCAL parteAlta:DWORD, parteBaja:DWORD, cantidadDigitos:DWORD, residuo:DWORD
@@ -512,7 +512,7 @@ EscribirEnteroSinSigno64 ENDP
 
 ; Convierte EDX:EAX (centavos) a moneda con dos decimales y la imprime.
 ; Entrada: importe en centavos sin signo en EDX:EAX.
-; Salida: escribe pesos y dos dígitos de centavos.
+; Salida: escribe pesos y dos digitos de centavos.
 ; Registros modificados: EAX, EDX, EFLAGS; EBX se preserva.
 EscribirMoneda64 PROC USES EBX
     LOCAL parteAlta:DWORD, parteBaja:DWORD, residuo:DWORD
@@ -554,7 +554,7 @@ EscribirMoneda64 PROC USES EBX
 EscribirMoneda64 ENDP
 
 ; Entrada: indiceProducto en la pila.
-; Salida: muestra código, nombre, precio y existencia.
+; Salida: muestra codigo, nombre, precio y existencia.
 ; Registros modificados: EAX, EDX, EFLAGS; ESI y EBX se preservan.
 MostrarProducto PROC USES ESI EBX, indiceProducto:DWORD
     mov EAX, indiceProducto
@@ -585,7 +585,7 @@ MostrarProducto PROC USES ESI EBX, indiceProducto:DWORD
 MostrarProducto ENDP
 
 ; Entrada: arregloProductos y cantidadProductos globales.
-; Salida: muestra todos los productos o el mensaje de catálogo vacío.
+; Salida: muestra todos los productos o el mensaje de catalogo vacio.
 ; Registros modificados: EAX, EDX, EFLAGS; ESI se preserva.
 MostrarInventario PROC USES ESI
     LOCAL indiceProducto:DWORD
@@ -711,8 +711,8 @@ ExistenciaCapturadaInvalida:
     ret
 RegistrarProducto ENDP
 
-; Entrada: pregunta = dirección del mensaje para solicitar el código.
-; Salida: codigoTemporal contiene el texto; AL = 1 si el formato es válido.
+; Entrada: pregunta = direccion del mensaje para solicitar el codigo.
+; Salida: codigoTemporal contiene el texto; AL = 1 si el formato es valido.
 ; Registros modificados: EAX, EDX, EFLAGS.
 LeerCodigoProducto PROC, pregunta:PTR BYTE
     invoke LeerEntrada, pregunta, ADDR codigoTemporal, SIZEOF codigoTemporal-1
@@ -743,8 +743,8 @@ ProductoNoEncontrado:
     ret
 BuscarProducto ENDP
 
-; Entrada: código y cantidad ingresados por consola.
-; Salida: actualiza la existencia si la operación es válida.
+; Entrada: codigo y cantidad ingresados por consola.
+; Salida: actualiza la existencia si la operacion es valida.
 ; Registros modificados: EAX, EDX, EFLAGS; EBX y ESI se preservan.
 RecibirMercancia PROC USES EBX ESI
     LOCAL indiceProducto:DWORD, cantidad:DWORD
@@ -792,8 +792,8 @@ LimiteMercanciaExcedido:
     ret
 RecibirMercancia ENDP
 
-; Entrada: código y cantidad ingresados por consola.
-; Salida: actualiza existencias e ingresosTotales si la venta es válida.
+; Entrada: codigo y cantidad ingresados por consola.
+; Salida: actualiza existencias e ingresosTotales si la venta es valida.
 ; Registros modificados: EAX, EDX, EFLAGS; EBX y ESI se preservan.
 VenderProducto PROC USES EBX ESI
     LOCAL indiceProducto:DWORD, cantidad:DWORD, ventaParteBaja:DWORD, ventaParteAlta:DWORD
@@ -872,8 +872,8 @@ CantidadVentaInvalida:
     ret
 VenderProducto ENDP
 
-; Entrada: catálogo e ingresosTotales globales.
-; Salida: muestra unidades, valor del inventario e ingresos de sesión.
+; Entrada: catalogo e ingresosTotales globales.
+; Salida: muestra unidades, valor del inventario e ingresos de sesion.
 ; Registros modificados: EAX, EDX, ECX, EFLAGS; ESI se preserva.
 MostrarResumen PROC USES ESI
     LOCAL unidadesTotales:DWORD, valorParteBaja:DWORD, valorParteAlta:DWORD, indiceProducto:DWORD
@@ -974,7 +974,7 @@ BucleCopiaDigitos:
 FormatearEnteroSinSigno ENDP
 
 ; Entrada: EAX = DWORD sin signo.
-; Salida: muestra la conversión decimal propia con WriteString.
+; Salida: muestra la conversion decimal propia con WriteString.
 ; Registros modificados: EAX, EFLAGS; EDX se preserva.
 EscribirEnteroSinSigno PROC USES EDX
     call FormatearEnteroSinSigno
@@ -983,7 +983,7 @@ EscribirEnteroSinSigno PROC USES EDX
     ret
 EscribirEnteroSinSigno ENDP
 
-; Entrada: bytes = dirección del buffer; cantidadBytes = longitud.
+; Entrada: bytes = direccion del buffer; cantidadBytes = longitud.
 ; Salida: marca errorEntradaSalida si no se escribieron todos los bytes.
 ; Registros modificados: EAX, EFLAGS; ECX y EDX se preservan.
 EscribirBytes PROC USES ECX EDX, bytes:PTR BYTE, cantidadBytes:DWORD
@@ -1004,7 +1004,7 @@ FinEscrituraBytes:
 EscribirBytes ENDP
 
 ; Entrada: arregloProductos y cantidadProductos globales.
-; Salida: escribe el catálogo y actualiza guardadoExitoso/cambiosSinGuardar.
+; Salida: escribe el catalogo y actualiza guardadoExitoso/cambiosSinGuardar.
 ; Registros modificados: EAX, ECX, EDX, EFLAGS; ESI se preserva.
 GuardarCatalogo PROC USES ESI
     LOCAL indiceProducto:DWORD, direccionProducto:DWORD, longitudTexto:DWORD
@@ -1072,8 +1072,8 @@ ErrorGuardarCatalogo:
     ret
 GuardarCatalogo ENDP
 
-; Entrada: archivo de catálogo en la ruta principal o de respaldo.
-; Salida: reemplaza el catálogo solo después de validar todas sus filas.
+; Entrada: archivo de catalogo en la ruta principal o de respaldo.
+; Salida: reemplaza el catalogo solo despues de validar todas sus filas.
 ; Registros modificados: EAX, ECX, EDX, EFLAGS; ESI, EDI y EBX se preservan.
 CargarCatalogo PROC USES ESI EDI EBX
     LOCAL inicioLinea:DWORD, siguienteLinea:DWORD, inicioCampo:DWORD
@@ -1310,7 +1310,7 @@ CargarCatalogo ENDP
 ;===========================================================
 ; Programa principal.
 ; Entrada: ninguna.
-; Salida: ejecuta el menú hasta confirmar la salida.
+; Salida: ejecuta el menu hasta confirmar la salida.
 ; Registros modificados: EAX, ECX, EDX, EFLAGS.
 ;===========================================================
 principal PROC
