@@ -33,7 +33,7 @@ Producto ENDS
     bufferArchivo      BYTE TAMANO_BUFFER_ARCHIVO DUP(0)
     arregloTemporal    Producto MAX_PRODUCTOS DUP(<>)
     bufferNumero    BYTE 21 DUP(0)
-    bufferCentavos  BYTE 3 DUP(0)
+    bufferCentavos  BYTE 2 DUP(0), " MXN", 0
     digitosInvertidos   BYTE 20 DUP(0)
     saltoLinea       BYTE 13, 10
     separador       BYTE '|'
@@ -547,7 +547,7 @@ EscribirMoneda64 PROC USES EBX
     mov EAX, unidadesCentavos
     add AL, '0'
     mov bufferCentavos[1], AL
-    mov BYTE PTR bufferCentavos[2], 0
+    mov BYTE PTR bufferCentavos[2], ' '
     mov EDX, OFFSET bufferCentavos
     call WriteString
     ret
@@ -561,24 +561,24 @@ MostrarProducto PROC USES ESI EBX, indiceProducto:DWORD
     imul EAX, TYPE Producto
     mov ESI, OFFSET arregloProductos
     add ESI, EAX
-    mov EDX, ESI
+    mov EDX, ESI    ; codigo
     call WriteString
     mov AL, ' '
     call WriteChar
-    lea EDX, [ESI + Producto.Nombre]
+    lea EDX, [ESI + Producto.Nombre]    ; nombre
     call WriteString
     mov AL, ' '
     call WriteChar
-    mov AL, '$'
+    mov AL, '$' ; simbolo
     call WriteChar
-    mov EAX, [ESI + Producto.PrecioCentavos]
+    mov EAX, [ESI + Producto.PrecioCentavos]    ; precio
     xor EDX, EDX
     call EscribirMoneda64
     mov AL, ' '
     call WriteChar
     mov EDX, OFFSET mensajeExistencia
     call WriteString
-    mov EAX, [ESI + Producto.Existencia]
+    mov EAX, [ESI + Producto.Existencia]    ; existencia
     call EscribirEnteroSinSigno
     call Crlf
     ret
