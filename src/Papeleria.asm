@@ -1,8 +1,8 @@
 ;===========================================================
 ; Proyecto: Sistema de ventas e inventario para papeleria
-; Curso: Lenguajes de Interfaz - Unidad 2
-; Descripcion: base de codigo MASM x86 con registro de inventario,
-; ventas y menu de control para una papeleria.
+; Curso: Lenguajes de Interfaz - Unidad 3
+; Descripcion: version refactorizada en MASM x86 del sistema de ventas,
+; inventario y menu de control para una papeleria.
 ;===========================================================
 
 INCLUDE Irvine32.inc
@@ -19,6 +19,12 @@ Producto STRUCT
     PrecioCentavos  DWORD ?
     Existencia    DWORD ?
 Producto ENDS
+
+; Expande la salida de una cadena o direccion en las llamadas a WriteString.
+MostrarTexto MACRO direccion
+    mov EDX, direccion
+    call WriteString
+ENDM
 
 .data
     rutaInventario   BYTE "data\inventario_papeleria.dat", 0
@@ -328,34 +334,22 @@ BuscarProductoPorCodigo ENDP
 ; Muestra el menu principal.
 ; Entrada: ninguna.
 ; Salida: opcionMenu contiene la seleccion; EAX = longitud leida.
-; Registros modificados: EAX, ECX, EDX, EFLAGS.
+; Registros modificados: EAX, EFLAGS; ECX y EDX se preservan con USES.
 ;===========================================================
-MostrarMenu PROC
+MostrarMenu PROC USES ECX EDX
     call Crlf
-    mov EDX, OFFSET mensajeTitulo
-    call WriteString
-    mov EDX, OFFSET mensajeMenu1
-    call WriteString
-    mov EDX, OFFSET mensajeMenu2
-    call WriteString
-    mov EDX, OFFSET mensajeMenu3
-    call WriteString
-    mov EDX, OFFSET mensajeMenu4
-    call WriteString
-    mov EDX, OFFSET mensajeMenu5
-    call WriteString
-    mov EDX, OFFSET mensajeMenu6
-    call WriteString
-    mov EDX, OFFSET mensajeMenu7
-    call WriteString
-    mov EDX, OFFSET mensajeMenu8
-    call WriteString
-    mov EDX, OFFSET mensajeMenu9
-    call WriteString
-    mov EDX, OFFSET mensajeMenu0
-    call WriteString
-    mov EDX, OFFSET preguntaMenu
-    call WriteString
+    MostrarTexto OFFSET mensajeTitulo
+    MostrarTexto OFFSET mensajeMenu1
+    MostrarTexto OFFSET mensajeMenu2
+    MostrarTexto OFFSET mensajeMenu3
+    MostrarTexto OFFSET mensajeMenu4
+    MostrarTexto OFFSET mensajeMenu5
+    MostrarTexto OFFSET mensajeMenu6
+    MostrarTexto OFFSET mensajeMenu7
+    MostrarTexto OFFSET mensajeMenu8
+    MostrarTexto OFFSET mensajeMenu9
+    MostrarTexto OFFSET mensajeMenu0
+    MostrarTexto OFFSET preguntaMenu
 
     mov EDX, OFFSET opcionMenu
     mov ECX, SIZEOF opcionMenu
@@ -505,8 +499,7 @@ CopiarDigitosSalida:
     dec ECX
     jns CopiarDigitosSalida
     mov BYTE PTR bufferNumero[EDI], 0
-    mov EDX, OFFSET bufferNumero
-    call WriteString
+    MostrarTexto OFFSET bufferNumero
     ret
 EscribirEnteroSinSigno64 ENDP
 
@@ -548,19 +541,28 @@ EscribirMoneda64 PROC USES EBX
     add AL, '0'
     mov bufferCentavos[1], AL
     mov BYTE PTR bufferCentavos[2], ' '
-    mov EDX, OFFSET bufferCentavos
-    call WriteString
+    MostrarTexto OFFSET bufferCentavos
     ret
 EscribirMoneda64 ENDP
+
+; Obtiene la direccion de un producto del catalogo.
+; Entrada: indiceProducto = indice dentro de arregloProductos.
+; Salida: EAX = direccion de la estructura Producto.
+; Registros modificados: EAX, EFLAGS; ECX se preserva con USES.
+ObtenerDireccionProducto PROC USES ECX, indiceProducto:DWORD
+    mov ECX, indiceProducto
+    imul ECX, TYPE Producto
+    mov EAX, OFFSET arregloProductos
+    add EAX, ECX
+    ret
+ObtenerDireccionProducto ENDP
 
 ; Entrada: indiceProducto en la pila.
 ; Salida: muestra codigo, nombre, precio y existencia.
 ; Registros modificados: EAX, EDX, EFLAGS; ESI y EBX se preservan.
 MostrarProducto PROC USES ESI EBX, indiceProducto:DWORD
-    mov EAX, indiceProducto
-    imul EAX, TYPE Producto
-    mov ESI, OFFSET arregloProductos
-    add ESI, EAX
+    invoke ObtenerDireccionProducto, indiceProducto
+    mov ESI, EAX
     mov EDX, ESI    ; codigo
     call WriteString
     mov AL, ' '
@@ -576,8 +578,7 @@ MostrarProducto PROC USES ESI EBX, indiceProducto:DWORD
     call EscribirMoneda64
     mov AL, ' '
     call WriteChar
-    mov EDX, OFFSET mensajeExistencia
-    call WriteString
+    MostrarTexto OFFSET mensajeExistencia
     mov EAX, [ESI + Producto.Existencia]    ; existencia
     call EscribirEnteroSinSigno
     call Crlf
@@ -591,8 +592,7 @@ MostrarInventario PROC USES ESI
     LOCAL indiceProducto:DWORD
     cmp cantidadProductos, 0
     jne HayProductos
-    mov EDX, OFFSET mensajeSinProductos
-    call WriteString
+    MostrarTexto OFFSET mensajeSinProductos
     ret
 HayProductos:
     mov indiceProducto, 0
@@ -614,8 +614,7 @@ RegistrarProducto PROC USES ESI EDI EBX
     LOCAL precioCapturado:DWORD, existenciaCapturada:DWORD
     cmp cantidadProductos, MAX_PRODUCTOS
     jb CapturarProducto
-    mov EDX, OFFSET mensajeInventarioLleno
-    call WriteString
+    MostrarTexto OFFSET mensajeInventarioLleno
     ret
 CapturarProducto:
     invoke LeerEntrada, ADDR preguntaCodigo, ADDR codigoTemporal, SIZEOF codigoTemporal-1
@@ -623,15 +622,13 @@ CapturarProducto:
     call EsCodigoValido
     cmp AL, 1
     je VerificarDuplicado
-    mov EDX, OFFSET mensajeCodigoInvalido
-    call WriteString
+    MostrarTexto OFFSET mensajeCodigoInvalido
     ret
 VerificarDuplicado:
     invoke BuscarProductoPorCodigo, ADDR codigoTemporal
     cmp EAX, -1
     je CapturarNombre
-    mov EDX, OFFSET mensajeDuplicado
-    call WriteString
+    MostrarTexto OFFSET mensajeDuplicado
     ret
 CapturarNombre:
     invoke LeerEntrada, ADDR preguntaNombre, ADDR nombreTemporal, SIZEOF nombreTemporal-1
@@ -665,49 +662,39 @@ NombreAceptado:
     jb ExistenciaCapturadaInvalida
     mov existenciaCapturada, EAX
 
-    mov EAX, cantidadProductos
-    imul EAX, TYPE Producto
-    mov ESI, OFFSET arregloProductos
-    add ESI, EAX
+    invoke ObtenerDireccionProducto, cantidadProductos
+    mov ESI, EAX
     lea EDI, [ESI + Producto.Codigo]
     mov ESI, OFFSET codigoTemporal
     mov ECX, LONGITUD_MAX_CODIGO
     cld
     rep movsb
 
-    mov EAX, cantidadProductos
-    imul EAX, TYPE Producto
-    mov ESI, OFFSET arregloProductos
-    add ESI, EAX
+    invoke ObtenerDireccionProducto, cantidadProductos
+    mov ESI, EAX
     lea EDI, [ESI + Producto.Nombre]
     mov ESI, OFFSET nombreTemporal
     mov ECX, LONGITUD_MAX_NOMBRE+1
     cld
     rep movsb
-    mov EAX, cantidadProductos
-    imul EAX, TYPE Producto
-    mov ESI, OFFSET arregloProductos
-    add ESI, EAX
+    invoke ObtenerDireccionProducto, cantidadProductos
+    mov ESI, EAX
     mov EAX, precioCapturado
     mov [ESI + Producto.PrecioCentavos], EAX
     mov EAX, existenciaCapturada
     mov [ESI + Producto.Existencia], EAX
     inc cantidadProductos
     mov cambiosSinGuardar, 1
-    mov EDX, OFFSET mensajeRegistrado
-    call WriteString
+    MostrarTexto OFFSET mensajeRegistrado
     ret
 NombreInvalido:
-    mov EDX, OFFSET mensajeInvalido
-    call WriteString
+    MostrarTexto OFFSET mensajeInvalido
     ret
 PrecioCapturadoInvalido:
-    mov EDX, OFFSET mensajePrecioInvalido
-    call WriteString
+    MostrarTexto OFFSET mensajePrecioInvalido
     ret
 ExistenciaCapturadaInvalida:
-    mov EDX, OFFSET mensajeCantidadInvalida
-    call WriteString
+    MostrarTexto OFFSET mensajeCantidadInvalida
     ret
 RegistrarProducto ENDP
 
@@ -728,8 +715,7 @@ BuscarProducto PROC
     invoke LeerCodigoProducto, ADDR mensajePreguntaCodigo
     cmp AL, 1
     je BuscarCoincidencia
-    mov EDX, OFFSET mensajeCodigoInvalido
-    call WriteString
+    MostrarTexto OFFSET mensajeCodigoInvalido
     ret
 BuscarCoincidencia:
     invoke BuscarProductoPorCodigo, ADDR codigoTemporal
@@ -738,8 +724,7 @@ BuscarCoincidencia:
     invoke MostrarProducto, EAX
     ret
 ProductoNoEncontrado:
-    mov EDX, OFFSET mensajeNoEncontrado
-    call WriteString
+    MostrarTexto OFFSET mensajeNoEncontrado
     ret
 BuscarProducto ENDP
 
@@ -751,8 +736,7 @@ RecibirMercancia PROC USES EBX ESI
     invoke LeerCodigoProducto, ADDR mensajeCodigoMercancia
     cmp AL, 1
     je BuscarProductoMercancia
-    mov EDX, OFFSET mensajeCodigoInvalido
-    call WriteString
+    MostrarTexto OFFSET mensajeCodigoInvalido
     ret
 BuscarProductoMercancia:
     invoke BuscarProductoPorCodigo, ADDR codigoTemporal
@@ -765,30 +749,24 @@ BuscarProductoMercancia:
     cmp EAX, 1
     jb CantidadMercanciaInvalida
     mov cantidad, EAX
-    mov EAX, indiceProducto
-    imul EAX, TYPE Producto
-    mov ESI, OFFSET arregloProductos
-    add ESI, EAX
+    invoke ObtenerDireccionProducto, indiceProducto
+    mov ESI, EAX
     mov EAX, [ESI + Producto.Existencia]
     add EAX, cantidad
     cmp EAX, EXISTENCIA_MAXIMA
     ja LimiteMercanciaExcedido
     mov [ESI + Producto.Existencia], EAX
     mov cambiosSinGuardar, 1
-    mov EDX, OFFSET mensajeMercanciaRecibida
-    call WriteString
+    MostrarTexto OFFSET mensajeMercanciaRecibida
     ret
 ProductoMercanciaNoEncontrado:
-    mov EDX, OFFSET mensajeNoEncontrado
-    call WriteString
+    MostrarTexto OFFSET mensajeNoEncontrado
     ret
 CantidadMercanciaInvalida:
-    mov EDX, OFFSET mensajeCantidadInvalida
-    call WriteString
+    MostrarTexto OFFSET mensajeCantidadInvalida
     ret
 LimiteMercanciaExcedido:
-    mov EDX, OFFSET mensajeLimiteExistencia
-    call WriteString
+    MostrarTexto OFFSET mensajeLimiteExistencia
     ret
 RecibirMercancia ENDP
 
@@ -800,8 +778,7 @@ VenderProducto PROC USES EBX ESI
     invoke LeerCodigoProducto, ADDR mensajeCodigoVenta
     cmp AL, 1
     je BuscarProductoVenta
-    mov EDX, OFFSET mensajeCodigoInvalido
-    call WriteString
+    MostrarTexto OFFSET mensajeCodigoInvalido
     ret
 BuscarProductoVenta:
     invoke BuscarProductoPorCodigo, ADDR codigoTemporal
@@ -814,15 +791,12 @@ BuscarProductoVenta:
     cmp EAX, 1
     jb CantidadVentaInvalida
     mov cantidad, EAX
-    mov EAX, indiceProducto
-    imul EAX, TYPE Producto
-    mov ESI, OFFSET arregloProductos
-    add ESI, EAX
+    invoke ObtenerDireccionProducto, indiceProducto
+    mov ESI, EAX
     mov EAX, [ESI + Producto.Existencia]
     cmp EAX, cantidad
     jae CalcularVenta
-    mov EDX, OFFSET mensajeExistenciaInsuficiente
-    call WriteString
+    MostrarTexto OFFSET mensajeExistenciaInsuficiente
     ret
 CalcularVenta:
     mov EAX, [ESI + Producto.PrecioCentavos]
@@ -836,17 +810,13 @@ CalcularVenta:
     call Dividir64Entre10
     sub ventaParteBaja, EAX
     sbb ventaParteAlta, EDX
-    mov EDX, OFFSET mensajeDescuento
-    call WriteString
+    MostrarTexto OFFSET mensajeDescuento
     jmp ActualizarVenta
 VentaSinDescuento:
-    mov EDX, OFFSET mensajeSinDescuento
-    call WriteString
+    MostrarTexto OFFSET mensajeSinDescuento
 ActualizarVenta:
-    mov EAX, indiceProducto
-    imul EAX, TYPE Producto
-    mov ESI, OFFSET arregloProductos
-    add ESI, EAX
+    invoke ObtenerDireccionProducto, indiceProducto
+    mov ESI, EAX
     mov EAX, [ESI + Producto.Existencia]
     sub EAX, cantidad
     mov [ESI + Producto.Existencia], EAX
@@ -855,20 +825,17 @@ ActualizarVenta:
     add DWORD PTR [ingresosTotales], EAX
     mov EAX, ventaParteAlta
     adc DWORD PTR [ingresosTotales+4], EAX
-    mov EDX, OFFSET mensajeTotalVenta
-    call WriteString
+    MostrarTexto OFFSET mensajeTotalVenta
     mov EDX, ventaParteAlta
     mov EAX, ventaParteBaja
     call EscribirMoneda64
     call Crlf
     ret
 ProductoVentaNoEncontrado:
-    mov EDX, OFFSET mensajeNoEncontrado
-    call WriteString
+    MostrarTexto OFFSET mensajeNoEncontrado
     ret
 CantidadVentaInvalida:
-    mov EDX, OFFSET mensajeCantidadInvalida
-    call WriteString
+    MostrarTexto OFFSET mensajeCantidadInvalida
     ret
 VenderProducto ENDP
 
@@ -885,9 +852,8 @@ BucleResumen:
     mov EAX, indiceProducto
     cmp EAX, cantidadProductos
     jae FinResumen
-    imul EAX, TYPE Producto
-    mov ESI, OFFSET arregloProductos
-    add ESI, EAX
+    invoke ObtenerDireccionProducto, indiceProducto
+    mov ESI, EAX
     mov EAX, [ESI + Producto.Existencia]
     add unidadesTotales, EAX
     mul DWORD PTR [ESI + Producto.PrecioCentavos]
@@ -897,27 +863,22 @@ BucleResumen:
     jmp BucleResumen
 
 FinResumen:
-    mov EDX, OFFSET mensajeResumen
-    call WriteString
-    mov EDX, OFFSET mensajeCantidadProductos
-    call WriteString
+    MostrarTexto OFFSET mensajeResumen
+    MostrarTexto OFFSET mensajeCantidadProductos
     mov EAX, cantidadProductos
     xor EDX, EDX
     call EscribirEnteroSinSigno64
     call Crlf
-    mov EDX, OFFSET mensajeUnidades
-    call WriteString
+    MostrarTexto OFFSET mensajeUnidades
     mov EAX, unidadesTotales
     call EscribirEnteroSinSigno
     call Crlf
-    mov EDX, OFFSET mensajeValorInventario
-    call WriteString
+    MostrarTexto OFFSET mensajeValorInventario
     mov EDX, valorParteAlta
     mov EAX, valorParteBaja
     call EscribirMoneda64
     call Crlf
-    mov EDX, OFFSET mensajeIngresos
-    call WriteString
+    MostrarTexto OFFSET mensajeIngresos
     mov EDX, DWORD PTR [ingresosTotales+4]
     mov EAX, DWORD PTR [ingresosTotales]
     call EscribirMoneda64
@@ -978,8 +939,7 @@ FormatearEnteroSinSigno ENDP
 ; Registros modificados: EAX, EFLAGS; EDX se preserva.
 EscribirEnteroSinSigno PROC USES EDX
     call FormatearEnteroSinSigno
-    mov EDX, OFFSET bufferNumero
-    call WriteString
+    MostrarTexto OFFSET bufferNumero
     ret
 EscribirEnteroSinSigno ENDP
 
@@ -1028,9 +988,8 @@ BucleGuardarCatalogo:
     mov EAX, indiceProducto
     cmp EAX, cantidadProductos
     jae CerrarCatalogoGuardado
-    imul EAX, TYPE Producto
-    mov ESI, OFFSET arregloProductos
-    add ESI, EAX
+    invoke ObtenerDireccionProducto, indiceProducto
+    mov ESI, EAX
     mov direccionProducto, ESI
     invoke EscribirBytes, ESI, 7
     invoke EscribirBytes, ADDR separador, 1
@@ -1063,12 +1022,10 @@ CerrarCatalogoGuardado:
     jne ErrorGuardarCatalogo
     mov guardadoExitoso, 1
     mov cambiosSinGuardar, 0
-    mov EDX, OFFSET mensajeGuardado
-    call WriteString
+    MostrarTexto OFFSET mensajeGuardado
     ret
 ErrorGuardarCatalogo:
-    mov EDX, OFFSET mensajeErrorArchivo
-    call WriteString
+    MostrarTexto OFFSET mensajeErrorArchivo
     ret
 GuardarCatalogo ENDP
 
@@ -1283,27 +1240,23 @@ ConfirmarCargaCatalogo:
     rep movsb
     mov EAX, identificadorArchivo
     call CloseFile
-    mov EDX, OFFSET mensajeCantidadCargada
-    call WriteString
+    MostrarTexto OFFSET mensajeCantidadCargada
     mov EAX, cantidadProductos
     call EscribirEnteroSinSigno
     call Crlf
-    mov EDX, OFFSET mensajeCargado
-    call WriteString
+    MostrarTexto OFFSET mensajeCargado
     ret
 
 ErrorLecturaCatalogo:
     mov EAX, identificadorArchivo
     call CloseFile
 ErrorCargarCatalogo:
-    mov EDX, OFFSET mensajeFormatoArchivo
-    call WriteString
+    MostrarTexto OFFSET mensajeFormatoArchivo
     ret
 CatalogoInvalido:
     mov EAX, identificadorArchivo
     call CloseFile
-    mov EDX, OFFSET mensajeFormatoArchivo
-    call WriteString
+    MostrarTexto OFFSET mensajeFormatoArchivo
     ret
 CargarCatalogo ENDP
 
@@ -1343,8 +1296,7 @@ BucleMenu:
     je OpcionMostrarRegla
 
 OpcionMenuInvalida:
-    mov EDX, OFFSET mensajeInvalido
-    call WriteString
+    MostrarTexto OFFSET mensajeInvalido
     jmp BucleMenu
 
 OpcionRegistrarProducto:
@@ -1372,15 +1324,13 @@ OpcionCargarCatalogo:
     call CargarCatalogo
     jmp BucleMenu
 OpcionMostrarRegla:
-    mov EDX, OFFSET mensajeRegla
-    call WriteString
+    MostrarTexto OFFSET mensajeRegla
     jmp BucleMenu
 
 SalirPrograma:
     cmp cambiosSinGuardar, 0
     je SalirSinAdvertencia
-    mov EDX, OFFSET mensajeCambiosSinGuardar
-    call WriteString
+    MostrarTexto OFFSET mensajeCambiosSinGuardar
     mov EDX, OFFSET opcionMenu
     mov ECX, SIZEOF opcionMenu
     call ReadString
@@ -1396,8 +1346,7 @@ SalirPrograma:
     cmp AL, 'n'
     je SalirSinAdvertencia
 RespuestaSalidaInvalida:
-    mov EDX, OFFSET mensajeInvalido
-    call WriteString
+    MostrarTexto OFFSET mensajeInvalido
     jmp BucleMenu
 GuardarCambiosSalida:
     call GuardarCatalogo
@@ -1405,12 +1354,10 @@ GuardarCambiosSalida:
     jne FalloGuardadoSalida
     jmp SalirSinAdvertencia
 FalloGuardadoSalida:
-    mov EDX, OFFSET mensajeGuardadoCancelado
-    call WriteString
+    MostrarTexto OFFSET mensajeGuardadoCancelado
     jmp BucleMenu
 SalirSinAdvertencia:
-    mov EDX, OFFSET mensajeSalida
-    call WriteString
+    MostrarTexto OFFSET mensajeSalida
     exit
 principal ENDP
 

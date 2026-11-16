@@ -37,6 +37,82 @@ Si no existe la carpeta `data` desde el directorio de trabajo, el ASM intenta gu
 
 La venta de cinco o más unidades de un mismo producto aplica un descuento del 10%. El cálculo usa centavos enteros y división entera, por lo que cualquier fracción de centavo se descarta.
 
+## Versión de la Unidad 3
+
+Se mantuvieron las operaciones, validaciones y la regla de descuento de la versión anterior. Los cambios se enfocaron en reutilizar el cálculo de direcciones, reducir secuencias de salida duplicadas y documentar la preservación de registros.
+
+| Parte del programa | Problema detectado antes | Cambio en Unidad 3 | Beneficio |
+| --- | --- | --- | --- |
+| Acceso a `arregloProductos` | El cálculo `indice * TYPE Producto + OFFSET arregloProductos` se repetía en varias operaciones. | Se agregó `ObtenerDireccionProducto`, usado al mostrar, registrar, recibir mercancía, vender, resumir y guardar. | Centraliza el acceso al catálogo y facilita mantener una única forma de calcular la dirección. |
+| Mensajes y menú | Se repetían los pares `mov EDX, OFFSET ...` y `call WriteString`. | La macro `MostrarTexto` reemplaza esas secuencias en 55 puntos. | Hace más legible la intención de mostrar una cadena y reduce las líneas repetidas en el archivo fuente. La expansión de la macro sigue generando las instrucciones en cada uso. |
+| Preservación de registros del menú | `MostrarMenu` usaba `ECX` y `EDX` para llamar a Irvine32 sin declararlos como registros preservados. | Se declaró `MostrarMenu PROC USES ECX EDX`. | Conserva los valores del llamador; `EAX` queda fuera de `USES` porque devuelve la longitud leída. MASM genera el prólogo y epílogo correspondientes. |
+
+### Fragmentos representativos
+
+**Procedimiento reutilizado — `src/Papeleria.asm`:**
+
+```asm
+ObtenerDireccionProducto PROC USES ECX, indiceProducto:DWORD
+    mov ECX, indiceProducto
+    imul ECX, TYPE Producto
+    mov EAX, OFFSET arregloProductos
+    add EAX, ECX
+    ret
+ObtenerDireccionProducto ENDP
+
+; Ejemplos de uso
+invoke ObtenerDireccionProducto, indiceProducto
+mov ESI, EAX
+```
+
+El procedimiento recibe un índice y devuelve en `EAX` la dirección del producto. Preserva `ECX`; el registro de retorno `EAX` no está en `USES`. Se reutiliza en más de una operación del catálogo.
+
+**Macro y puntos de uso — `src/Papeleria.asm`:**
+
+```asm
+MostrarTexto MACRO direccion
+    mov EDX, direccion
+    call WriteString
+ENDM
+
+; En MostrarMenu y en los mensajes de validación/resultado
+MostrarTexto OFFSET mensajeTitulo
+MostrarTexto OFFSET mensajeMenu1
+MostrarTexto OFFSET mensajeInvalido
+```
+
+La macro recibe la dirección de una cadena o buffer. No contiene etiquetas internas, por lo que no requiere `LOCAL`.
+
+**Procedimiento con `USES` — `src/Papeleria.asm`:**
+
+```asm
+MostrarMenu PROC USES ECX EDX
+    ; ...mostrar opciones...
+    mov EDX, OFFSET opcionMenu
+    mov ECX, SIZEOF opcionMenu
+    call ReadString
+    ret
+MostrarMenu ENDP
+```
+
+`ReadString` entrega la longitud en `EAX`; este registro no se preserva para que el resultado llegue al llamador. `ECX` y `EDX` se restauran al salir.
+
+### Comparación de líneas de código fuente
+
+Con el mismo criterio en ambas versiones, se contaron las líneas no vacías que no son comentarios del archivo `src/Papeleria.asm`; cada invocación de macro cuenta como una línea fuente, no como sus instrucciones expandidas.
+
+| Versión | Líneas fuente |
+| --- | ---: |
+| Unidad 2, antes de estos cambios | 1227 |
+| Unidad 3, después de estos cambios | 1167 |
+| Diferencia | 60 menos (4.9%) |
+
+Dejaron de escribirse repetidamente las dos instrucciones de salida de cadenas y los bloques de cálculo de direcciones de producto. Las expansiones de `MostrarTexto` permanecen en el código ensamblado en cada punto de uso, por lo que la reducción corresponde al fuente, no necesariamente al ejecutable.
+
+### Pruebas de Unidad 3
+
+Según la ejecución confirmada, se completaron todos los casos de [la tabla de pruebas](tabla_pruebas.md) con los resultados esperados: registro y búsqueda, entradas de mercancía, ventas aceptadas y rechazadas, resumen, guardado/carga y la regla adicional del descuento.
+
 ## Fuentes consultadas
 
 - Medina Jiménez, José Luis. *Lenguajes de Interfaz, Unidad 2*. Presentación del curso, agosto-diciembre de 2026.

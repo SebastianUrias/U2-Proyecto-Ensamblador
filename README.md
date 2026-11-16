@@ -1,6 +1,6 @@
-# Proyecto Unidad 2 - Papelería del Valle
+# Proyecto Unidad 3 - Papelería del Valle
 
-Sistema de consola para administrar productos e inventario de una papelería. La entrega principal es el programa en ensamblador MASM x86 con Irvine32; el código Python y sus pruebas son auxiliares para revisar reglas de negocio, no reemplazan el programa ASM.
+Sistema de consola para administrar productos e inventario de una papelería, retomado de la versión de la Unidad 2. La entrega principal es el programa en ensamblador MASM x86 con Irvine32; el código Python y sus pruebas son auxiliares para revisar reglas de negocio, no reemplazan el programa ASM.
 
 ## Funciones del programa ASM
 
@@ -10,13 +10,14 @@ Sistema de consola para administrar productos e inventario de una papelería. La
 - Vender, validar existencias y aplicar 10% de descuento al vender 5 o más unidades del mismo producto.
 - Mostrar unidades, valor del inventario e ingresos de la sesión.
 - Guardar y cargar el catálogo.
+- Reutilizar procedimientos, macros y `USES` para reducir repetición y preservar registros.
 
 ## Archivos
 
 - `Papeleria.sln` y `Papeleria.vcxproj`: solución Win32 para Visual Studio 2022 con MASM.
 - `src\Papeleria.asm`: aplicación principal MASM x86.
 - `data\inventario_papeleria.dat`: catálogo de ejemplo y archivo de persistencia del ASM.
-- `docs\informe.md` y `docs\tabla_pruebas.md`: documentación y casos de prueba.
+- `docs\informe.md` y `docs\tabla_pruebas.md`: reporte de Unidad 3 y tabla de pruebas actualizada.
 
 ## Compilar y ejecutar
 
